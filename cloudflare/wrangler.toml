@@ -1,0 +1,9 @@
+name = "stackapps-metadata-injector"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+routes = [
+  { pattern = "stackapps.app/app/*", zone_name = "stackapps.app" },
+  { pattern = "stackapps.app/app-details*", zone_name = "stackapps.app" },
+  { pattern = "stackapps.app/manage-app*", zone_name = "stackapps.app" },
+]

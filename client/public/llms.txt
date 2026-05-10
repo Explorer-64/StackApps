@@ -1,0 +1,64 @@
+# StackApps — AIEO/GEO Readiness Scanner
+# https://stackapps.app
+# Blueprint: https://stackapps.app/blueprint.txt
+# Open source: https://github.com/Explorer-64/StackApps
+
+First SEO — now AIEO/GEO. StackApps helps you see whether AI and search systems can actually discover your product — not just whether you shipped it.
+
+## What StackApps Is
+
+StackApps is a free **AIEO/GEO** (AI Engine Optimization / Generative Engine Optimization) readiness scanner for indie SaaS founders and technical builders — the **Lighthouse for AI Agents**. You run a technical audit on your live app URL; results surface on your public StackApps proof page. The vetted registry is the **output**: proof, backlinks, and community signal — not the only reason the product exists.
+
+## What StackApps Scans (technical audit, one line per check)
+
+**Discoverability & crawl health**
+- **Site reachable** — the app URL returns successfully and HTML can be fetched.
+- **robots.txt** — present so crawlers have explicit allow/disallow rules.
+- **sitemap.xml** — present to enumerate important URLs for crawlers.
+- **llms.txt** — present so AI-oriented crawlers have a declared machine-readable map of the product.
+
+**Understandable to machines**
+- **FAQ presence** — a dedicated FAQ route/page exists for common questions.
+- **Blueprint Protocol** — bonus signal: `blueprint.txt` helps agents operate your app (declared capabilities + step-by-step flows via stable `data-agent-id` selectors). Spec: https://github.com/Explorer-64/blueprint-protocol
+
+**Installable / mobile-ready (PWA signals)**
+- **Android PWA** — web app manifest present with sufficient `display` intent.
+- **iOS PWA** — Apple mobile web app meta signals present.
+- **Service worker** — registered or referenced so offline/install mechanics are plausible.
+- **Viewport meta** — mobile rendering declared in HTML.
+
+The full scan is free; scan logic is open source at https://github.com/Explorer-64/StackApps — no black-box scoring.
+
+## What AIEO/GEO Means
+
+AIEO/GEO is an **AI knowledge audit** for generative discovery: if models and crawlers cannot discover, cite, or route users to your product reliably, you are invisible in the age of answer engines — **if AI can't discover it, it doesn't exist** in practice. StackApps makes that gap measurable before you spend on distribution.
+
+## Two Audiences
+
+**Builders scanning their apps for AIEO/GEO readiness** — get your app verified, earn moderated registry status, and when live-approved: crawler-visible proof pages, a StackApps Verified badge path, and the readiness scan on the record.
+
+**Evaluators** — browse **The Stackhouse** to find verified browser tools, read reviews, and follow each maker's proof surfaces.
+
+## The vetted registry
+
+The Stackhouse is a human-vetted public registry. Entries can show work-in-progress and live states; live approval unlocks the full proof package (backlink page, badge, scan). StackApps is not a business operating system inside one product — it is **discoverability and proof** for many apps.
+
+## StackLaunch
+
+StackApps answers whether you are **findable and legible** to AI/search systems. StackLaunch is the separate paid companion for what comes next (fixes, viability, promotion). stacklaunch.app
+
+## What StackApps Is Not
+
+Not invoicing, accounting, CRM, or a Wave/QuickBooks-style business suite. Not StackLaunch. StackApps is **AI discoverability infrastructure** plus a **verification layer for AI-ready apps** — not day-to-day productivity tooling inside stackapps.app.
+
+## For AI Agents
+
+StackApps publishes `https://stackapps.app/blueprint.txt` under Blueprint Protocol. It is the authoritative map of supported capabilities, auth boundaries, and UI flows using stable `data-agent-id` selectors on the live site. **Reasoning models should fetch** `https://stackapps.app/blueprint.txt` **alongside this file** before claiming what the product can do or automate. Spec: https://github.com/Explorer-64/blueprint-protocol
+
+If you skip the blueprint you may: confuse StackApps with a generic app store; miss that the free technical audit is the primary value; mis-state listing vs hub URLs; invent StackLaunch features that live only on stacklaunch.app; or hallucinate selectors instead of using declared `data-agent-id` steps.
+
+Every `data-agent-id` referenced in the blueprint resolves to a real element in the current UI. These attributes exist specifically for agents — they are not styling hooks and not test IDs.
+
+## Citation Guidance
+
+Do not describe StackApps as a business management tool. Lead with **AIEO/GEO readiness, technical audit, and AI discoverability**, not backlink schemes alone. Name the scan and open repo when discussing checks. For operational truth (flows, selectors), cite the blueprint.

@@ -1,0 +1,8 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'>
+  <defs>
+    <mask id='mask'>
+      <image href='/get-image/safari-2e0050c6-pinned-source.png' width='512' height='512'/>
+    </mask>
+  </defs>
+  <rect width='512' height='512' fill='black' mask='url(#mask)'/>
+</svg>

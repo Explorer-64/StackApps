@@ -1,0 +1,155 @@
+{
+  "id": "https://stackapps.app/",
+  "name": "The Stackhouse by StackApps",
+  "short_name": "StackApps",
+  "description": "A curated directory of browser-ready indie apps. List free; live-approved apps get a backlink, StackApps Verified badge, and site readiness scan.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait-primary",
+  "background_color": "#050505",
+  "theme_color": "#00F3FF",
+  "categories": ["business", "productivity", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/icon-16x16-any.png",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-32x32-any.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-48x48-any.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-72x72-any.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-96x96-any.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-120x120-any.png",
+      "sizes": "120x120",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-144x144-any.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-150x150-any.png",
+      "sizes": "150x150",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-152x152-any.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-167x167-any.png",
+      "sizes": "167x167",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-180x180-any.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192-any.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-256x256-any.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-384x384-any.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512-any.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-1024x1024-any.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Directory",
+      "short_name": "Directory",
+      "description": "Browse the public app directory",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192-any.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "For builders",
+      "short_name": "Builders",
+      "description": "List your app on StackApps",
+      "url": "/for-builders",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192-any.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

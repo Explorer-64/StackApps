@@ -1,0 +1,295 @@
+# BLUEPRINT: StackApps
+# Version: 2.0.0
+# URL: https://stackapps.app
+# Updated: 2026-04-28
+
+## IDENTITY
+name: StackApps
+tagline: Get your app verified. Backlink, StackApps Verified badge, and site readiness scan — free.
+description: StackApps is a vetted public registry and verification layer for AI-ready,
+  browser-ready indie apps (The Stackhouse). Any builder can get their app verified for free.
+  When approved as live, three things happen automatically: (1) a permanent server-rendered
+  proof page is created at stackapps.app/apps/[slug] with a dofollow backlink to the live
+  app URL — present in raw HTML, visible to every crawler on first load; (2) an embeddable
+  StackApps badge is available as an SVG at stackapps.app/api/badge/[appId].svg and displays
+  StackApps Verified when verification checks pass; (3) a Site Readiness technical audit
+  checks 10 signals (site reachability, llms.txt, robots.txt, sitemap.xml, FAQ presence,
+  Android PWA, iOS PWA, service worker, viewport meta, Blueprint Protocol) and stores
+  results publicly on the proof page. Apps that pass all 10 checks are directed to
+  StackLaunch (stacklaunch.app) for promotion. Apps with failing checks are directed to
+  StackLaunch AIEO/GEO for a prioritized fix list. StackApps is the free value layer.
+  StackLaunch is the paid promotion and audit engine it feeds.
+category: developer-tools / ai-ready-registry
+url: https://stackapps.app
+contact: support@stackapps.app
+public-routes: /, /dashboard, /apps/*, /for-builders, /faq, /privacy, /terms
+auth-required-routes: /hub, /settings, /workstation, /admin
+
+## AUTH
+provider: firebase
+methods:
+  - email+password
+  - google-oauth
+
+### UI (email)
+steps:
+  1. NAVIGATE /login
+  2. INPUT [data-agent-id="login-email"] <<user-email>>
+  3. INPUT [data-agent-id="login-password"] <<user-password>>
+  4. CLICK [data-agent-id="login-email-submit"]
+  5. WAIT [data-agent-id="hub-heading"] (max: 15s)
+
+## ACCESS
+last-resort: ui
+
+## LISTING PAGES — TWO URLS, TWO PURPOSES
+note: Every live-approved app has two URLs that serve different audiences.
+  - stackapps.app/apps/[slug] — Server-rendered (SSR). Returns complete HTML on
+    first load including the dofollow backlink, JSON-LD schema, and Open Graph tags.
+    This is the canonical SEO URL and what crawlers index.
+  - stackapps.app/app/[id] — Client-rendered SPA. The interactive listing with
+    readiness scan results, badge embed tool, reviews, and rating form. This is
+    what agents should navigate to for UI automation.
+
+## CAPABILITY: browse-apps
+description: Open the public Stackhouse vetted registry, search and filter approved
+  apps without signing in.
+input:
+  - name: search-query
+    type: string
+    required: false
+  - name: category
+    type: string
+    required: false
+  - name: sort
+    type: string
+    required: false
+    description: "newest" or "rating"
+auth-required: false
+scope: read-only
+
+### UI
+steps:
+  1. NAVIGATE /dashboard
+  2. WAIT [data-agent-id="dashboard-heading"] (max: 15s)
+  3. VERIFY text_contains [data-agent-id="dashboard-heading"] "The Stackhouse"
+  4. INPUT [data-agent-id="directory-search"] <<search-query>>
+  5. SELECT [data-agent-id="directory-category"] "<<category>>"
+  6. SELECT [data-agent-id="directory-sort"] "<<sort>>"
+  7. VERIFY selector_exists [data-agent-id="directory-grid"]
+
+Note: Run steps 4–6 only when the matching input is provided.
+
+## CAPABILITY: sign-in
+description: Sign in with Firebase using email and password.
+input:
+  - name: email
+    type: string
+    required: true
+  - name: password
+    type: string
+    required: true
+output:
+  - type: redirect
+    description: Navigates to /hub on success.
+auth-required: false
+scope: form-submit
+
+### UI
+steps:
+  1. NAVIGATE /login
+  2. WAIT [data-agent-id="login-heading"] (max: 15s)
+  3. INPUT [data-agent-id="login-email"] <<email>>
+  4. INPUT [data-agent-id="login-password"] <<password>>
+  5. CLICK [data-agent-id="login-email-submit"]
+  6. WAIT [data-agent-id="hub-heading"] (max: 15s)
+  7. VERIFY url == "/hub"
+
+## CAPABILITY: view-app-details
+description: Open a listing's interactive detail page showing description,
+  category, site readiness scan results, reviews, and launch link.
+  For the crawler-visible SSR page, use stackapps.app/apps/[slug] instead.
+input:
+  - name: app-id
+    type: string
+    required: true
+    description: Firestore document id of the app (used in /app/:id).
+auth-required: false
+scope: read-only
+
+### UI
+steps:
+  1. NAVIGATE /app/<<app-id>>
+  2. WAIT [data-agent-id="app-detail-name"] (max: 15s)
+  3. VERIFY selector_exists [data-agent-id="app-detail-name"]
+  4. VERIFY selector_exists [data-agent-id="app-detail-description"]
+  5. VERIFY selector_exists [data-agent-id="app-detail-launch"]
+  6. VERIFY selector_exists [data-agent-id="readiness-scan-section"]
+
+## CAPABILITY: view-readiness-scan
+description: Read the Site Readiness scan results for a live-approved listing.
+  Results include 10 boolean checks, a score out of 10, the last-checked
+  timestamp, and a CTA to StackLaunch based on pass/fail state.
+input:
+  - name: app-id
+    type: string
+    required: true
+auth-required: false
+scope: read-only
+
+### UI
+steps:
+  1. NAVIGATE /app/<<app-id>>
+  2. WAIT [data-agent-id="readiness-scan-section"] (max: 15s)
+  3. VERIFY selector_exists [data-agent-id="readiness-scan-section"]
+
+## CAPABILITY: embed-badge
+description: Retrieve the embeddable SVG badge code for a listing. Only
+  visible to the app owner. The badge reflects StackApps verification status,
+  readiness score, and links back to the listing page.
+input:
+  - name: app-id
+    type: string
+    required: true
+auth-required: true
+scope: read-only
+owner-only: true
+
+### UI
+steps:
+  1. ASSERT-AUTH (must be listing owner)
+  2. NAVIGATE /app/<<app-id>>
+  3. WAIT [data-agent-id="badge-embed-section"] (max: 15s)
+  4. VERIFY selector_exists [data-agent-id="badge-embed-section"]
+
+Note: The badge SVG is also directly accessible at
+  stackapps.app/api/badge/<<app-id>>.svg — no auth required for the image endpoint.
+
+## CAPABILITY: rerun-readiness-scan
+description: Re-run the Site Readiness scan for a live-approved app owned by the
+  signed-in builder. Rescans are limited to once every 24 hours per app.
+input:
+  - name: app-id
+    type: string
+    required: true
+auth-required: true
+scope: form-submit
+owner-only: true
+
+### UI
+steps:
+  1. ASSERT-AUTH (must be listing owner)
+  2. NAVIGATE /hub
+  3. WAIT [data-agent-id="hub-my-projects"] (max: 15s)
+  4. CLICK [data-agent-id="rescan-button-<<app-id>>"]
+  5. WAIT [data-agent-id="hub-my-projects"] (max: 15s)
+
+## CAPABILITY: submit-app-listing
+description: From the signed-in hub, submit a new listing. When approved as live,
+  the app automatically receives: a dofollow backlink at stackapps.app/apps/[slug],
+  an embeddable StackApps Verified badge, and a 10-point Site Readiness scan.
+input:
+  - name: app-name
+    type: string
+    required: true
+  - name: app-url
+    type: string
+    required: true
+  - name: description
+    type: string
+    required: true
+  - name: category
+    type: string
+    required: false
+    description: Use one of productivity, finance, design, marketing,
+      communication, developer-tools, ecommerce, media, legal, health.
+  - name: tags
+    type: string
+    required: false
+    description: Comma-separated tags.
+  - name: thumbnail-file
+    type: file
+    required: false
+auth-required: true
+scope: form-submit
+
+### UI
+steps:
+  1. ASSERT-AUTH
+  2. NAVIGATE /hub
+  3. WAIT [data-agent-id="hub-heading"] (max: 15s)
+  4. CLICK [data-agent-id="hub-submit-new-app"]
+  5. WAIT [data-agent-id="listing-name"] (max: 10s)
+  6. INPUT [data-agent-id="listing-name"] <<app-name>>
+  7. INPUT [data-agent-id="listing-url"] <<app-url>>
+  8. INPUT [data-agent-id="listing-description"] <<description>>
+  9. INPUT [data-agent-id="listing-category"] <<category>>
+  10. INPUT [data-agent-id="listing-tags"] <<tags>>
+  11. CLICK [data-agent-id="listing-submit"]
+  12. WAIT 15s
+  13. VERIFY selector_exists [data-agent-id="hub-my-projects"]
+
+Note: When <<thumbnail-file>> is provided, run
+  UPLOAD [data-agent-id="listing-thumbnail-file"] <<thumbnail-file>>
+  after step 10 and before step 11.
+
+## CAPABILITY: request-live-review
+description: For an approved building-stage app, ask StackApps moderators to review
+  it as a fully live app. If approved as live, the backlink, StackApps Verified
+  badge state, and Site Readiness scan become active.
+input:
+  - name: app-id
+    type: string
+    required: true
+auth-required: true
+scope: form-submit
+owner-only: true
+
+### UI
+steps:
+  1. ASSERT-AUTH (must be listing owner)
+  2. NAVIGATE /hub
+  3. WAIT [data-agent-id="hub-my-projects"] (max: 15s)
+  4. CLICK [data-agent-id="request-live-review-<<app-id>>"]
+  5. ACCEPT-DIALOG
+  6. WAIT [data-agent-id="hub-my-projects"] (max: 15s)
+
+# REFERENCE — data-agent-id attribute index
+# Home.tsx
+#   data-agent-id="home-browse-stackhouse"     Link "Browse The Stackhouse" (hero)
+#   data-agent-id="home-browse-more"           Link "Browse the full Stackhouse"
+# Dashboard.tsx
+#   data-agent-id="dashboard-heading"          h1 title
+#   data-agent-id="directory-search"           search Input
+#   data-agent-id="directory-category"         category SelectTrigger
+#   data-agent-id="directory-sort"             sort SelectTrigger
+#   data-agent-id="directory-grid"             grid wrapper around AppCard list
+# AppCard.tsx
+#   data-agent-id="app-card-<app-id>"          outer Link per card (dynamic)
+# Login.tsx
+#   data-agent-id="login-heading"              h1
+#   data-agent-id="login-email"                email Input
+#   data-agent-id="login-password"             password Input
+#   data-agent-id="login-email-submit"         submit Button
+#   data-agent-id="login-toggle-signup"        toggle sign-up/sign-in Button
+# Hub.tsx
+#   data-agent-id="hub-heading"                h1 "My Apps"
+#   data-agent-id="hub-submit-new-app"         "Submit New App" Button
+#   data-agent-id="hub-my-projects"            My Projects list container
+#   data-agent-id="listing-name"               form name Input
+#   data-agent-id="listing-url"                form app URL Input
+#   data-agent-id="listing-description"        form description Textarea
+#   data-agent-id="listing-category"           form category Input
+#   data-agent-id="listing-tags"               form tags Input
+#   data-agent-id="listing-submit"             form submit Button
+#   data-agent-id="listing-cancel"             form cancel Button
+#   data-agent-id="request-live-review-<app-id>" Request Live Review Button (dynamic)
+#   data-agent-id="rescan-button-<app-id>"     Re-run scan Button (dynamic)
+# ImageUpload.tsx
+#   data-agent-id="listing-thumbnail-file"     hidden file input
+# AppDetails.tsx
+#   data-agent-id="app-detail-name"            h1 app name
+#   data-agent-id="app-detail-description"     description paragraph
+#   data-agent-id="app-detail-launch"          "Launch App" anchor
+#   data-agent-id="readiness-scan-section"     Site Readiness scan section
+#   data-agent-id="badge-embed-section"        Badge embed section (owner only)
