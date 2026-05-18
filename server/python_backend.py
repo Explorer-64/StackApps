@@ -295,7 +295,6 @@ async def run_mcp_blueprint_test_endpoint(
 from .ratings import ratings_router
 from .moderation import moderation_router
 from .uploads import uploads_router
-from .stacklaunch import router as stacklaunch_router
 from .mcp_registry import mcp_registry_router, seed_mcp_registry
 from .mcp_stubs import mcp_stubs_bp_router, mcp_stubs_router
 
@@ -303,7 +302,6 @@ app.include_router(router)
 app.include_router(ratings_router)
 app.include_router(moderation_router)
 app.include_router(uploads_router)
-app.include_router(stacklaunch_router)
 app.include_router(mcp_registry_router)
 app.include_router(mcp_stubs_router)
 app.include_router(mcp_stubs_bp_router)
