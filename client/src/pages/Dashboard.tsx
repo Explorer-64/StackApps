@@ -27,7 +27,7 @@ export default function Dashboard() {
   useEffect(() => {
     setPageSeo(
       'The Stackhouse — vetted registry with public proof',
-      'Verified, browser-ready indie apps on StackApps: technical audits, StackApps Verified badges, and crawler-visible backlinks for live-approved apps.',
+      'Browser-ready indie apps on StackApps: open twelve-signal readiness audits, tier labels, live embed badges, and canonical proof pages.',
     );
   }, []);
 
@@ -49,6 +49,14 @@ export default function Dashboard() {
         return matchesSearch && matchesCategory;
       })
       .sort((a, b) => {
+        const buildingRank = (s?: string) => (s === 'building' ? 1 : 0);
+        const buildingDiff = buildingRank(a.status) - buildingRank(b.status);
+        if (buildingDiff !== 0) return buildingDiff;
+
+        const featuredDiff =
+          (b.isFeatured === true ? 1 : 0) - (a.isFeatured === true ? 1 : 0);
+        if (featuredDiff !== 0) return featuredDiff;
+
         if (sortBy === 'rating') {
           const ratingDiff = (b.averageRating || 0) - (a.averageRating || 0);
           if (ratingDiff !== 0) return ratingDiff;
@@ -76,7 +84,7 @@ export default function Dashboard() {
                 Verified indie apps with public proof.
               </h1>
               <p className="mt-4 text-gray-400 text-lg leading-relaxed">
-                Vetted browser-ready tools, human-reviewed. Live apps can show readiness scans, StackApps Verified badges, and crawler-visible proof pages.
+                Vetted browser-ready tools, human-reviewed. Live apps show readiness scans (twelve checks, tier labels), embed badges, and crawler-visible proof pages.
               </p>
             </div>
 

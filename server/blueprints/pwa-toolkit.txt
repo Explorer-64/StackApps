@@ -1,0 +1,47 @@
+# BLUEPRINT: PWA Toolkit [MCP]
+# Version: 3.0.0
+# URL: https://stub.stackapps.app/pwa-toolkit
+# Updated: 2026-05-15
+
+## CAPABILITIES
+scaffold-manifest: https://stub.stackapps.app/pwa-toolkit/blueprints/scaffold-manifest.txt | mcp
+generate-service-worker: https://stub.stackapps.app/pwa-toolkit/blueprints/generate-service-worker.txt | mcp
+audit-pwa-requirements: https://stub.stackapps.app/pwa-toolkit/blueprints/audit-pwa-requirements.txt | mcp
+validate-icon-set: https://stub.stackapps.app/pwa-toolkit/blueprints/validate-icon-set.txt | mcp
+check-installability: https://stub.stackapps.app/pwa-toolkit/blueprints/check-installability.txt | mcp
+manage-billing: https://stub.stackapps.app/pwa-toolkit/blueprints/manage-billing.txt | human-only
+
+## IDENTITY
+name: PWA Toolkit
+description: Scaffold production-ready Progressive Web Apps — generate manifest.json with correct icon entries, configurable service workers with caching strategies, and run installability audits against any live URL.
+category: developer-tools
+contact: support@pwatoolkit.dev
+
+## SUMMARY
+tagline: Ship installable PWAs faster — manifest, service worker, and compliance audits in one toolkit.
+audience: Web developers building installable Progressive Web Apps who need correct manifests, service workers, and PWA compliance without manual configuration.
+capabilities:
+  - scaffold-manifest: Generate a valid manifest.json with icon size entries and theme configuration
+  - generate-service-worker: Generate a service worker with cache-first, network-first, or SWR strategy
+  - audit-pwa-requirements: Full installability audit against a live URL — manifest, HTTPS, icons, service worker
+  - validate-icon-set: Check an icon ZIP or URL set for PWA size compliance and maskable padding
+  - check-installability: Quick pass/fail installability check with specific remediation hints
+
+## AUTH
+provider: api-key
+method: api-key
+
+## MCP
+server: pwa-toolkit-mcp
+install: claude mcp add pwa-toolkit -- uvx pwa-toolkit-mcp --api-key <<api-key>>
+auth: PWA_TOOLKIT_API_KEY — from Settings > Developer. Keys start with pwat_live_.
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## TIMING
+manifest-generation: 1–3s — use max: 5s
+service-worker-generation: 1–3s — use max: 5s
+pwa-audit: 5–15s — use max: 25s
+icon-validation: 2–8s — use max: 15s

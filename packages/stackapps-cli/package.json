@@ -1,0 +1,24 @@
+{
+  "name": "stackapps-cli",
+  "version": "0.1.0",
+  "description": "StackApps readiness scan from the terminal (calls the same public scan API as stackapps.app/scan).",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "stackapps": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "5.6.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

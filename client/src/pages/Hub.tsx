@@ -11,8 +11,18 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { AppSubmitForm } from '@/components/AppSubmitForm';
 import { MyReviewsList } from '@/components/MyReviewsList';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { App, Review } from '@shared/schema';
 import { NoIndex } from '@/components/NoIndex';
+import { isManualRescanCooldownError } from '@/utils/manualRescanErrors';
 
 type RescanState = 'idle' | 'running' | 'done' | 'cooldown' | 'failed';
 
@@ -33,6 +43,8 @@ export default function Hub() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [requestingLiveReviewId, setRequestingLiveReviewId] = useState<string | null>(null);
   const [rescanStates, setRescanStates] = useState<Record<string, RescanState>>({});
+  const [rescanCooldownOpen, setRescanCooldownOpen] = useState(false);
+  const [rescanCooldownAppName, setRescanCooldownAppName] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -46,24 +58,37 @@ export default function Hub() {
 
   useEffect(() => {
     if (!user) return;
-    let db: ReturnType<typeof getFirestoreDb>;
-    initializeFirebase().then(() => {
-      db = getFirestoreDb();
-      const q = query(collection(db, 'reviews'), where('userId', '==', user.uid));
-      return onSnapshot(q, async (snapshot) => {
-        const reviews = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Review[];
-        reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setMyReviews(reviews);
-        const missingAppIds = reviews.map(r => r.appId).filter(id => !reviewAppNames[id]);
-        if (missingAppIds.length > 0) {
-          const fetches = missingAppIds.map(id => getDoc(doc(db, 'apps', id)));
-          const docs = await Promise.all(fetches);
-          const names: Record<string, string> = {};
-          docs.forEach(d => { if (d.exists()) names[d.id] = (d.data() as App).name; });
-          setReviewAppNames(prev => ({ ...prev, ...names }));
-        }
-      });
-    });
+    let cancelled = false;
+    let firestoreUnsub: (() => void) | undefined;
+
+    (async () => {
+      try {
+        await initializeFirebase();
+        const db = await getFirestoreDb();
+        if (cancelled) return;
+        const q = query(collection(db, 'reviews'), where('userId', '==', user.uid));
+        firestoreUnsub = onSnapshot(q, async (snapshot) => {
+          const reviews = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Review[];
+          reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setMyReviews(reviews);
+          const missingAppIds = reviews.map(r => r.appId).filter(id => !reviewAppNames[id]);
+          if (missingAppIds.length > 0) {
+            const fetches = missingAppIds.map(id => getDoc(doc(db, 'apps', id)));
+            const docs = await Promise.all(fetches);
+            const names: Record<string, string> = {};
+            docs.forEach(d => { if (d.exists()) names[d.id] = (d.data() as App).name; });
+            setReviewAppNames(prev => ({ ...prev, ...names }));
+          }
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      firestoreUnsub?.();
+    };
   }, [user]);
 
   const handleUpdateReview = async (review: Review) => {
@@ -178,17 +203,21 @@ export default function Hub() {
       setRescanState(appId, 'done');
       window.setTimeout(() => setRescanState(appId, 'idle'), 2000);
     } catch (error) {
-      const message = error instanceof Error ? error.message : '';
-      const state = message.includes('24 hours') ? 'cooldown' : 'failed';
-      setRescanState(appId, state);
-      window.setTimeout(() => setRescanState(appId, 'idle'), state === 'cooldown' ? 3000 : 2000);
+      if (isManualRescanCooldownError(error)) {
+        const app = myApps.find((a) => a.id === appId);
+        setRescanCooldownAppName(app?.name ?? 'This app');
+        setRescanCooldownOpen(true);
+        setRescanState(appId, 'idle');
+        return;
+      }
+      setRescanState(appId, 'failed');
+      window.setTimeout(() => setRescanState(appId, 'idle'), 2000);
     }
   };
 
   const getRescanLabel = (state: RescanState = 'idle') => {
     if (state === 'running') return 'Running...';
     if (state === 'done') return 'Done!';
-    if (state === 'cooldown') return 'Scan on cooldown';
     if (state === 'failed') return 'Failed';
     return 'Re-run scan';
   };
@@ -204,6 +233,12 @@ export default function Hub() {
             My Apps
           </h1>
           <p className="text-gray-400">Apps you&apos;re getting verified on The Stackhouse</p>
+          <p className="mt-3 text-sm text-gray-500">
+            <Link href="/scan" className="text-neon-blue hover:text-neon-green font-medium">
+              Free AI readiness scan
+            </Link>
+            {' — '}audit any live URL before you list (one scan per domain).
+          </p>
         </div>
 
         <div>
@@ -267,7 +302,7 @@ export default function Hub() {
                           {app.moderationStatus && <span className={`px-2 py-0.5 rounded-sm text-xs font-bold uppercase tracking-wide border ${app.moderationStatus === 'approved' ? 'bg-green-900/30 text-neon-green border-green-800' : app.moderationStatus === 'rejected' ? 'bg-red-900/30 text-red-500 border-red-800' : 'bg-orange-900/30 text-orange-400 border-orange-800'}`}>{app.moderationStatus.replace('_', ' ')}</span>}
                         </div>
                         {app.moderationStatus === 'approved' && app.status === 'building' && (
-                          <p className="text-xs text-gray-500 mb-2">App approved as building — finish your app and use Request Live Review when ready. Live approval unlocks your backlink, StackApps Verified badge, and scan.</p>
+                          <p className="text-xs text-gray-500 mb-2">App approved as building — finish your app and use Request Live Review when ready. Live approval unlocks your backlink, live embed badge, and full twelve-check scan with tiers.</p>
                         )}
                         {app.moderationStatus === 'rejected' && app.rejectionReason && (
                           <p className="text-red-400 text-xs mb-2">Rejection reason: {app.rejectionReason}</p>
@@ -327,17 +362,26 @@ export default function Hub() {
                       </div>
 
                       {app.status === 'live' && app.moderationStatus === 'approved' && app.scan_timestamp && (
-                        <div className="flex items-center gap-2 mt-3">
-                          <span className="text-xs text-gray-500">Show scan results publicly</span>
+                        <div className="flex items-center gap-3 mt-3">
                           <button
+                            type="button"
                             role="switch"
                             aria-checked={app.scan_public === true}
+                            aria-label="Show detailed readiness checklist on your public listing"
                             onClick={() => updateApp(app.id, { scan_public: !app.scan_public })}
                             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${app.scan_public ? 'bg-neon-green' : 'bg-cyber-light'}`}
                             data-agent-id={`scan-public-toggle-${app.id}`}
                           >
-                            <span className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${app.scan_public ? 'translate-x-4' : 'translate-x-0'}`} />
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${app.scan_public ? 'translate-x-4' : 'translate-x-0'}`}
+                            />
                           </button>
+                          <div>
+                            <p className={`text-xs font-medium ${app.scan_public ? 'text-neon-green' : 'text-gray-400'}`}>
+                              {app.scan_public ? 'Checklist visible on listing' : 'Checklist hidden from listing'}
+                            </p>
+                            <p className="text-xs text-gray-600">Badges and tier always shown regardless</p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -363,6 +407,30 @@ export default function Hub() {
       </main>
 
       <SiteFooter />
+
+      <AlertDialog open={rescanCooldownOpen} onOpenChange={setRescanCooldownOpen}>
+        <AlertDialogContent className="bg-cyber-gray border border-cyber-light text-white sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">One scan every 24 hours</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300 text-left space-y-2">
+              <span className="block">
+                <span className="font-semibold text-white">{rescanCooldownAppName}</span> can only be rescanned once per day. That keeps load fair for everyone.
+              </span>
+              <span className="block">
+                Fix your live site, wait until 24 hours have passed since the last check, then tap <span className="text-neon-blue font-medium">Re-run scan</span> again.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              className="bg-neon-blue text-black hover:bg-white font-bold"
+              onClick={() => setRescanCooldownOpen(false)}
+            >
+              Got it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

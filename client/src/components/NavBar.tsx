@@ -4,7 +4,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { ADMIN_EMAILS } from '@/lib/admins';
 
 interface NavBarProps {
-  activePage?: 'home' | 'hub' | 'dashboard' | 'workstation' | 'admin' | 'faq' | 'settings' | 'for-builders' | 'scan';
+  activePage?: 'home' | 'hub' | 'dashboard' | 'workstation' | 'admin' | 'faq' | 'settings' | 'for-builders' | 'scan' | 'guides';
 }
 
 export function NavBar({ activePage }: NavBarProps) {
@@ -51,6 +51,20 @@ export function NavBar({ activePage }: NavBarProps) {
                 <Link href="/hub" className={linkClass('hub')} data-testid="link-hub">
                   My Apps
                 </Link>
+                <Link
+                  href="/scan"
+                  className={linkClass('scan')}
+                  data-agent-id="nav-check-app"
+                  data-testid="link-scan"
+                >
+                  Check your app
+                </Link>
+                <Link href="/guides" className={linkClass('guides')} data-testid="link-guides">
+                  Guides
+                </Link>
+                <Link href="/mcp-blueprint-results" className={linkClass('mcp-blueprint-results')} data-testid="link-blueprint-results">
+                  Blueprint
+                </Link>
                 <Link href="/dashboard" className={linkClass('dashboard')} data-testid="link-dashboard">
                   The Stackhouse
                 </Link>
@@ -83,6 +97,12 @@ export function NavBar({ activePage }: NavBarProps) {
                 >
                   Check your app
                 </Link>
+                <Link href="/guides" className={linkClass('guides')} data-testid="link-guides-public">
+                  Guides
+                </Link>
+                <Link href="/mcp-blueprint-results" className={linkClass('mcp-blueprint-results')}>
+                  Blueprint
+                </Link>
                 <Link href="/for-builders" className={linkClass('for-builders')} data-testid="link-for-builders">
                   For Builders
                 </Link>
@@ -97,7 +117,7 @@ export function NavBar({ activePage }: NavBarProps) {
                   className="px-5 py-2 bg-neon-blue text-black hover:bg-white rounded-sm font-bold transition-all shadow-[0_0_10px_rgba(0,243,255,0.3)] hover:shadow-[0_0_20px_rgba(0,243,255,0.5)] text-sm uppercase tracking-wider"
                   data-testid="link-signin"
                 >
-                  List Free
+                  Log in
                 </Link>
               </>
             )}
@@ -110,6 +130,15 @@ export function NavBar({ activePage }: NavBarProps) {
               <>
                 <Link href="/hub" className="text-gray-300 font-medium py-2 px-2 hover:bg-cyber-light hover:text-neon-blue rounded-sm" onClick={() => setMobileMenuOpen(false)}>
                   My Apps
+                </Link>
+                <Link href="/scan" className="text-gray-300 font-medium py-2 px-2 hover:bg-cyber-light hover:text-neon-blue rounded-sm" onClick={() => setMobileMenuOpen(false)} data-testid="link-scan-mobile">
+                  Check your app
+                </Link>
+                <Link href="/guides" className="text-gray-300 font-medium py-2 px-2 hover:bg-cyber-light hover:text-neon-blue rounded-sm" onClick={() => setMobileMenuOpen(false)}>
+                  Guides
+                </Link>
+                <Link href="/mcp-blueprint-results" className="text-gray-300 font-medium py-2 px-2 hover:bg-cyber-light hover:text-neon-blue rounded-sm" onClick={() => setMobileMenuOpen(false)}>
+                  Blueprint
                 </Link>
                 <Link href="/dashboard" className="text-gray-300 font-medium py-2 px-2 hover:bg-cyber-light hover:text-neon-blue rounded-sm" onClick={() => setMobileMenuOpen(false)}>
                   The Stackhouse
@@ -140,6 +169,12 @@ export function NavBar({ activePage }: NavBarProps) {
                 </Link>
                 <Link href="/scan" className="text-gray-300 font-medium py-2 px-2 hover:bg-cyber-light hover:text-neon-blue rounded-sm" onClick={() => setMobileMenuOpen(false)}>
                   Check your app
+                </Link>
+                <Link href="/guides" className="text-gray-300 font-medium py-2 px-2 hover:bg-cyber-light hover:text-neon-blue rounded-sm" onClick={() => setMobileMenuOpen(false)}>
+                  Guides
+                </Link>
+                <Link href="/mcp-blueprint-results" className="text-gray-300 font-medium py-2 px-2 hover:bg-cyber-light hover:text-neon-blue rounded-sm" onClick={() => setMobileMenuOpen(false)}>
+                  Blueprint
                 </Link>
                 <Link href="/for-builders" className="text-gray-300 font-medium py-2 px-2 hover:bg-cyber-light hover:text-neon-blue rounded-sm" onClick={() => setMobileMenuOpen(false)}>
                   For Builders

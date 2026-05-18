@@ -1,0 +1,49 @@
+# BLUEPRINT: Brand Kit Studio [MCP]
+# Version: 3.0.0
+# URL: https://stub.stackapps.app/brand-kit
+# Updated: 2026-05-15
+
+## CAPABILITIES
+compose-color-palette: https://stub.stackapps.app/brand-kit/blueprints/compose-color-palette.txt | mcp
+create-logo-variations: https://stub.stackapps.app/brand-kit/blueprints/create-logo-variations.txt | mcp
+generate-favicon: https://stub.stackapps.app/brand-kit/blueprints/generate-favicon.txt | mcp
+draft-typography-stack: https://stub.stackapps.app/brand-kit/blueprints/draft-typography-stack.txt | mcp
+design-app-icon: https://stub.stackapps.app/brand-kit/blueprints/design-app-icon.txt | mcp
+export-brand-bundle: https://stub.stackapps.app/brand-kit/blueprints/export-brand-bundle.txt | mcp
+manage-billing: https://stub.stackapps.app/brand-kit/blueprints/manage-billing.txt | human-only
+
+## IDENTITY
+name: Brand Kit Studio
+description: Build and export complete brand identity systems — color palettes, logo SVG variants, typography stacks, favicon packages, and brand bundles — from a brand name or hex seed color.
+category: design
+contact: support@brandkit.studio
+
+## SUMMARY
+tagline: Your entire brand identity from a name and a color.
+audience: Indie developers, founders, and designers building consistent brand identities for web products and SaaS apps.
+capabilities:
+  - compose-color-palette: Accessible color system with primary, secondary, and neutral swatches
+  - create-logo-variations: Light, dark, and monochrome SVG logo variants
+  - generate-favicon: Favicon set (16, 32, 48px PNG) from an uploaded logo URL
+  - draft-typography-stack: Heading and body font pairing with fallback stacks
+  - design-app-icon: Single SVG app icon glyph for UI surfaces and app listings
+  - export-brand-bundle: ZIP of all brand assets — logos, colors, fonts, and favicon set
+
+## AUTH
+provider: api-key
+method: api-key
+
+## MCP
+server: brand-kit-mcp
+install: claude mcp add brand-kit -- uvx brand-kit-mcp --api-key <<api-key>>
+auth: BRAND_KIT_API_KEY — from Account > API Keys. Keys start with bk_live_.
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## TIMING
+palette-generation: 2–5s — use max: 10s
+logo-svg-render: 5–15s — use max: 20s
+favicon-export: 3–8s — use max: 15s
+bundle-zip: 8–20s — use max: 30s

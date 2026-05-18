@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getFirebaseAuth } from '@/lib/firebase';
+import { getFirebaseAuth, initializeFirebase } from '@/lib/firebase';
 import { Link } from 'wouter';
 
 type Props = {
@@ -20,6 +20,7 @@ export function ReportForm({ appId, appName, appUrl, userId }: Props) {
     if (!userId) return;
     setReportSubmitting(true);
     try {
+      await initializeFirebase();
       const auth = getFirebaseAuth();
       const token = await auth.currentUser?.getIdToken();
       const response = await fetch('/api/report-app', {

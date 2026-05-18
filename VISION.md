@@ -2,7 +2,7 @@
 
 ## What StackApps is (one paragraph)
 
-StackApps is a free **AIEO/GEO** (AI Engine Optimization / Generative Engine Optimization) readiness scanner for **indie SaaS founders and technical builders** — the **Lighthouse for AI Agents**. It runs an automated technical audit of what **search engines and AI crawlers** can discover about your live app, and surfaces results on your **public StackApps listing**. **The Stackhouse** directory is the **output layer**: backlinks, badges, reviews, and crawlable pages — not a replacement for your product’s own domain. The scan is **free**; scan logic is **open source** at https://github.com/Explorer-64/StackApps. **StackLaunch** is the **paid companion** for what comes after you understand the gap — deeper fixes, viability, and promotion — separate product at stacklaunch.app.
+StackApps is a free **AIEO/GEO** readiness scanner for **indie SaaS founders and technical builders** — the **Lighthouse for AI Agents**. It **leads with an open, auditable methodology** (same checks in GitHub) for what **search engines and AI crawlers** can discover about your live app. **The Stackhouse** is the **human-moderated proof layer** when you list: canonical pages, badges, reviews — downstream of the audit, not a generic “AI directory” play. The scan is **free**; logic is **open source** at https://github.com/Explorer-64/StackApps. **StackLaunch** is the **paid companion** for fixes, viability, and promotion — separate product at stacklaunch.app.
 
 ## StackApps vs. the listed products (important distinction)
 
@@ -26,7 +26,7 @@ Honest moderation (your listings don’t get a free pass) keeps that trust **cre
 
 **1. Indie developers and PWA SaaS builders**  
 - **Job:** “Get my **PWA SaaS** in front of operators who actually install web apps; prove quality; collect reviews; earn a backlink; know what is missing before promotion.”  
-- **Success:** Fair moderation; live-approved SSR listing pages; StackApps Verified badge embeds; Site Readiness scan results; a clear next step into StackLaunch AIEO/GEO or Market Viability.
+- **Success:** Fair moderation; live-approved SSR listing pages; embed badge + twelve-check Site Readiness with tier labels; a clear next step into StackLaunch AIEO/GEO or Market Viability.
 
 **2. Operators evaluating tools**  
 - **Job:** “Find a **focused SaaS** that works on my phone, installable, without enterprise fluff or sketchy directories.”  
@@ -40,20 +40,20 @@ StackApps sits in the **indie product directory** space but **owns a wedge**: **
 
 **Acquisition vs. value vs. revenue (plain English):** the **free scan** is **acquisition** — it teaches builders what crawlers see and pulls serious listings into the funnel. The **free directory listing** is **ongoing value** — public proof, SEO surfaces, and community signal. **StackLaunch** is **revenue** when a builder wants paid help beyond what the free scan provides.
 
-1. **StackLaunch** — **Primary monetization path**: StackApps gives the free backlink, badge, and readiness scan; StackLaunch sells the fix list, AIEO/GEO improvements, market viability check, and promotion engine.
+1. **StackLaunch** — **Primary monetization path**: StackApps gives the free backlink, embed badge, and twelve-check readiness scan; StackLaunch sells the fix list, AIEO/GEO improvements, market viability check, and promotion engine.
 2. **Wizard and ecosystem PWA SaaS** — **Product revenue**: freemium → subscription on **Wizard domains** (and aligned products). StackApps remains the distribution and proof layer, not the billing surface.
 3. **Sponsored or promoted directory listings** — **Directory-native** revenue: labeled placements that scale with traffic and niche fit, only if they do not erode trust.
 
 ## Growth strategy
 
 - **SEO:** **Stable SSR listing URLs** (`/apps/:slug`) with crawler-visible backlinks, JSON-LD, and Open Graph tags; interactive detail pages remain at `/app/:id`.
-- **Developer social proof:** **StackApps Verified** badges and shareable listing pages.
+- **Developer social proof:** Live **embed badges** (StackApps Verified on the SVG), **Bronze/Silver/Gold** readiness tiers on listings, and shareable listing pages.
 - **Trust:** Moderation, readiness scans, review quality, and report handling as public signals — consistent rules even for **first-party** listings.
 - **Conversion:** Failed readiness checks point to StackLaunch AIEO/GEO; clean scans point to StackLaunch Market Viability.
 
 ## What success looks like
 
-- **6 months:** Healthy submissions; **most listings** read as **PWA or clear web SaaS**; live-approved apps have visible backlinks, badges, and scan scores; builders understand **StackApps = free proof layer**.
+- **6 months:** Healthy submissions; **most listings** read as **PWA or clear web SaaS**; live-approved apps have visible backlinks, embed badges, scan scores, and tier labels; builders understand **StackApps = free proof layer**.
 - **1 year:** Meaningful organic traffic to SSR listing pages; recognized niche for **browser-ready indie app discovery**; StackLaunch receives qualified leads from scan failures and clean-score promotion intent.
 - **3 years:** **Category-defining discovery and proof layer** for **indie PWA SaaS aimed at SMB**; economics from **StackLaunch + product subscriptions + selective directory sponsors**; StackLaunch remains a separate product with a clear conversion path.
 

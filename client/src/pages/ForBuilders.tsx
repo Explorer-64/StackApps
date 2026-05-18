@@ -17,8 +17,8 @@ import {
 export default function ForBuilders() {
   useEffect(() => {
     setPageSeo(
-      'List Your App Free — Backlink, StackApps Verified Badge, Readiness Scan',
-      'Get your browser-ready app verified on StackApps for free. Live-approved apps get a crawler-visible backlink, StackApps Verified badge, and Site Readiness technical audit.',
+      'For builders — Open AI crawl audit & public proof on The Stackhouse',
+      'StackApps leads with a free, open-source twelve-signal technical audit. List for free; when live-approved you get public proof (canonical page, embed badge, tiers) — curated credibility, not a generic AI directory.',
     );
   }, []);
 
@@ -31,27 +31,27 @@ export default function ForBuilders() {
     },
     {
       icon: Search,
-      label: 'A crawler-visible backlink',
+      label: 'Canonical proof in HTML',
       description:
-        'Live-approved apps get a server-rendered listing at stackapps.app/apps/[slug] with a raw HTML link to the app URL.',
+        'Live-approved apps get an SSR page at stackapps.app/apps/[slug] with your real URL in the document — for discovery and citations, not a paid directory slot.',
     },
     {
       icon: TrendingUp,
       label: 'A technical audit that points somewhere useful',
       description:
-        'We audit discoverability signals, including llms.txt, robots.txt, sitemap.xml, PWA basics, and Blueprint Protocol.',
+        'We audit twelve signals: crawl health, llms.txt, FAQ, blueprint, MCP, CLI, PWA basics, viewport, and more — with tier labels on your listing.',
     },
     {
       icon: Heart,
       label: 'A badge you can embed',
       description:
-        'Owners can copy a StackApps badge for their own site. StackApps Verified live apps link back to their public proof page.',
+        'Owners copy embed code for an SVG that shows StackApps Verified when the listing is live-approved; it links back to your public proof page.',
     },
     {
       icon: Gift,
-      label: 'Free verification. Always.',
+      label: 'Free audit. Always.',
       description:
-        'No freemium registry tiers, no premium placement upsell.',
+        'The scan and methodology stay free and inspectable on GitHub. Browse is curated, not pay-to-rank.',
     },
   ] as const;
 
@@ -97,7 +97,7 @@ export default function ForBuilders() {
     {
       n: 3,
       title: 'Approved as live',
-      body: 'Your app clears the bar: permanent SSR page at stackapps.app/apps/[slug] with a dofollow backlink, plus an embeddable StackApps Verified badge and readiness scan.',
+      body: 'Your app clears moderation as live: canonical SSR proof page at stackapps.app/apps/[slug] (real URL in HTML for crawlers), embeddable badge, and twelve-signal scan with tier labels on the listing.',
     },
     {
       n: 4,
@@ -115,10 +115,10 @@ export default function ForBuilders() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-16 md:pt-20 md:pb-24">
           <div className="max-w-3xl">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.08] [text-shadow:0_0_40px_rgba(0,243,255,0.25)]">
-              Get your app verified. Backlink, StackApps Verified badge, and readiness scan.
+              Ship AI-era crawl compliance first. Earn public proof on The Stackhouse when you list.
             </h1>
             <p className="mt-6 text-lg md:text-xl text-gray-400 leading-relaxed">
-              StackApps is free for builders. Get your browser-ready app into the vetted registry, pass human review, and when it is approved as live, receive the public proof surfaces that help crawlers, agents, and buyers trust it.
+              The product is an <span className="text-gray-200 font-semibold">open, auditable</span> readiness scan (same checks on GitHub). The Stackhouse is human-moderated visibility for browser-ready tools — so agents and buyers see a vetted signal, not another paid directory listing.
             </p>
             <Link
               href="/hub"
@@ -135,7 +135,7 @@ export default function ForBuilders() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
           <h2 className="text-2xl md:text-3xl font-bold text-white">What you get for free.</h2>
           <p className="mt-4 text-gray-400 text-lg max-w-3xl leading-relaxed">
-            StackApps gives live-approved apps a backlink, badge, and technical audit first. StackLaunch is there when you want the fix list or promotion plan.
+            Anyone can run the free scan; listing adds moderated proof (page, badge, tiers on record). StackLaunch is the separate path when you want fixes, viability, or promotion help.
           </p>
           <div className="mt-12 space-y-10">
             {benefits.map(({ icon: Icon, label, description }) => (
@@ -255,9 +255,9 @@ export default function ForBuilders() {
           <div className="relative overflow-hidden rounded-xl border border-cyber-light bg-cyber-dark px-8 py-12 md:px-12 md:py-16 text-center">
             <div className="absolute inset-0 bg-gradient-to-r from-neon-green/5 to-neon-blue/5 pointer-events-none" />
             <div className="relative max-w-2xl mx-auto">
-              <h2 className="text-2xl md:text-3xl font-bold text-white">Ship it. Audit it. Prove it is AI-ready.</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-white">Run the open audit. List when you want proof.</h2>
               <p className="mt-4 text-gray-400 text-base md:text-lg leading-relaxed">
-                Get the free StackApps verification perks first. Then use StackLaunch when you want a prioritized fix list or market viability check.
+                Start on /scan or list from the hub. StackLaunch stays the paid path for fixes, deeper AIEO work, and market viability — separate product, clear boundary.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Link

@@ -16,10 +16,14 @@ const VALID_ROUTES = [
   "/settings",
   "/workstation",
   "/admin",
+  "/mcp-test",
+  "/mcp-blueprint-results",
+  "/scan",
 ];
 
 const VALID_ROUTE_PREFIXES = [
   "/app/",
+  "/mcp-blueprint-results/",
 ];
 
 export function isValidRoute(path: string): boolean {
@@ -57,13 +61,15 @@ export async function registerRoutes(
     });
   });
 
-  app.use(
-    "/api",
-    createProxyMiddleware({
-      target: PYTHON_BACKEND_URL,
-      changeOrigin: true,
-    })
-  );
+  for (const prefix of ["/api", "/stubs", "/stubs-bp"]) {
+    app.use(
+      prefix,
+      createProxyMiddleware({
+        target: PYTHON_BACKEND_URL,
+        changeOrigin: true,
+      })
+    );
+  }
 
   return httpServer;
 }

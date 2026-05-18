@@ -1,0 +1,82 @@
+# BLUEPRINT: Calendar Bridge
+# Version: 2.5.0
+# URL: https://stub.stackapps.app/calendar-tools
+# Updated: 2026-05-15
+
+## IDENTITY
+name: Calendar Bridge
+description: Query availability blocks, find mutual free slots across attendees, and draft meeting agendas from calendar data.
+category: productivity
+contact: registry@stackapps.app
+
+## AUTH
+provider: oauth
+method: oauth-google
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## CAPABILITY: find-mutual-slots
+description: Find overlapping free time blocks across a list of attendees for a given duration.
+input:
+  - name: attendee_emails
+    type: string
+    required: true
+    description: Comma-separated list of attendee email addresses.
+  - name: duration_minutes
+    type: number
+    required: true
+    description: Required meeting duration in minutes.
+  - name: date_range
+    type: string
+    required: false
+    description: ISO date range to search within, e.g. "2026-05-20/2026-05-27". Default is the next 7 days.
+output:
+  - type: json
+    description: Array of available time slots with start, end, and timezone fields.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: find_mutual_slots
+
+## CAPABILITY: draft-meeting-outline
+description: Create a meeting agenda with goals, timeboxes, and action item slots from a purpose statement.
+input:
+  - name: meeting_purpose
+    type: string
+    required: true
+    description: One sentence describing the meeting's goal.
+  - name: duration_minutes
+    type: number
+    required: false
+    description: Meeting duration in minutes. Default 60.
+output:
+  - type: json
+    description: Structured agenda with sections, time allocations, and action item placeholders.
+auth-required: false
+scope: read-only
+
+### MCP
+tool: draft_meeting_outline
+
+## CAPABILITY: timezone-normalize
+description: Convert a set of event times to each attendee's local timezone offset.
+input:
+  - name: event_times
+    type: string
+    required: true
+    description: JSON array of ISO datetime strings to convert.
+  - name: attendee_timezones
+    type: string
+    required: true
+    description: Comma-separated IANA timezone names, e.g. "America/New_York,Europe/London".
+output:
+  - type: json
+    description: Event times keyed by timezone with local time and UTC offset.
+auth-required: false
+scope: read-only
+
+### MCP
+tool: timezone_normalize

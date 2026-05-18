@@ -1,0 +1,82 @@
+# BLUEPRINT: Email Dispatch MCP
+# Version: 2.5.0
+# URL: https://stub.stackapps.app/email-tools
+# Updated: 2026-05-15
+
+## IDENTITY
+name: Email Dispatch MCP
+description: Template, validate, and route transactional emails with suppression list checking and bounce payload normalization.
+category: communication
+contact: registry@stackapps.app
+
+## AUTH
+provider: api-key
+method: api-key
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## CAPABILITY: render-template
+description: Merge variables into a stored email template and return the rendered subject and HTML body.
+input:
+  - name: template_id
+    type: string
+    required: true
+    description: Template identifier configured in the workspace.
+  - name: variables
+    type: string
+    required: true
+    description: JSON string of key-value pairs to merge into the template.
+output:
+  - type: json
+    description: Rendered subject line and HTML body string.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: render_template
+
+## CAPABILITY: send-email
+description: Send a transactional email to a single validated recipient.
+input:
+  - name: to
+    type: string
+    required: true
+    description: Recipient email address.
+  - name: subject
+    type: string
+    required: true
+    description: Email subject line.
+  - name: html_body
+    type: string
+    required: true
+    description: HTML email body.
+  - name: from_name
+    type: string
+    required: false
+    description: Sender display name. Defaults to the account-level from name.
+output:
+  - type: json
+    description: Message ID and delivery status from the sending provider.
+auth-required: true
+scope: form-submit
+
+### MCP
+tool: send_email
+
+## CAPABILITY: validate-recipients
+description: Check a list of email addresses against format rules and the account suppression list.
+input:
+  - name: emails
+    type: string
+    required: true
+    description: JSON array of email addresses to validate.
+output:
+  - type: json
+    description: Per-address result with valid flag, format error if any, and suppression status.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: validate_recipients

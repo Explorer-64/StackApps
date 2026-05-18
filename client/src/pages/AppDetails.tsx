@@ -13,6 +13,16 @@ import { ReadinessScan, type RescanState } from '@/components/ReadinessScan';
 import { BadgeEmbed } from '@/components/BadgeEmbed';
 import { ReviewSection } from '@/components/ReviewSection';
 import { ReportForm } from '@/components/ReportForm';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { isManualRescanCooldownError } from '@/utils/manualRescanErrors';
 
 export default function AppDetails() {
   const [matchById, params] = useRoute('/app/:id');
@@ -27,15 +37,17 @@ export default function AppDetails() {
   const [error, setError] = useState<string | null>(null);
   const [db, setDb] = useState<Firestore | null>(null);
   const [rescanState, setRescanState] = useState<RescanState>('idle');
+  const [rescanCooldownOpen, setRescanCooldownOpen] = useState(false);
 
   useEffect(() => {
-    initializeFirebase().then(() => {
-      setDb(getFirestoreDb());
-    }).catch(err => {
-      console.error("Failed to init Firestore:", err);
-      setError("Failed to connect to database");
-      setLoading(false);
-    });
+    initializeFirebase()
+      .then(() => getFirestoreDb())
+      .then(setDb)
+      .catch((err) => {
+        console.error("Failed to init Firestore:", err);
+        setError("Failed to connect to database");
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -156,10 +168,13 @@ export default function AppDetails() {
       setRescanState('done');
       window.setTimeout(() => setRescanState('idle'), 2000);
     } catch (error) {
-      const message = error instanceof Error ? error.message : '';
-      const state = message.includes('24 hours') ? 'cooldown' : 'failed';
-      setRescanState(state);
-      window.setTimeout(() => setRescanState('idle'), state === 'cooldown' ? 3000 : 2000);
+      if (isManualRescanCooldownError(error)) {
+        setRescanCooldownOpen(true);
+        setRescanState('idle');
+        return;
+      }
+      setRescanState('failed');
+      window.setTimeout(() => setRescanState('idle'), 2000);
     }
   };
 
@@ -284,6 +299,30 @@ export default function AppDetails() {
         </main>
         
         <SiteFooter />
+
+      <AlertDialog open={rescanCooldownOpen} onOpenChange={setRescanCooldownOpen}>
+        <AlertDialogContent className="bg-cyber-gray border border-cyber-light text-white sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">One scan every 24 hours</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300 text-left space-y-2">
+              <span className="block">
+                <span className="font-semibold text-white">{app.name}</span> can only be rescanned once per day. That keeps load fair for everyone.
+              </span>
+              <span className="block">
+                Fix your live site, wait until 24 hours have passed since the last check, then tap <span className="text-neon-blue font-medium">Re-run scan</span> again.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              className="bg-neon-blue text-black hover:bg-white font-bold"
+              onClick={() => setRescanCooldownOpen(false)}
+            >
+              Got it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

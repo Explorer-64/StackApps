@@ -33,9 +33,8 @@ export default function VerifyApp() {
 
   useEffect(() => {
     initializeFirebase()
-      .then(() => {
-        setDb(getFirestoreDb());
-      })
+      .then(() => getFirestoreDb())
+      .then(setDb)
       .catch((err) => {
         if (import.meta.env.DEV) console.error('Failed to init Firestore:', err);
         setInvalid(true);
@@ -93,7 +92,7 @@ export default function VerifyApp() {
 
   useEffect(() => {
     if (app && id) {
-      setPageSeo(`Verified · ${app.name} · The Stackhouse`, `StackApps Verified badge status for ${app.name} on The Stackhouse.`);
+      setPageSeo(`Verified · ${app.name} · The Stackhouse`, `Live embed badge and readiness tier info for ${app.name} on The Stackhouse.`);
       return;
     }
     if (loading && id) {
@@ -198,7 +197,7 @@ export default function VerifyApp() {
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">{app.name}</h1>
 
           <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-            <span className="text-gray-300">StackApps Verified Badge</span>
+            <span className="text-gray-300">Live embed badge (SVG)</span>
             <Badge
               className={cn(
                 'border-neon-green/50 bg-neon-green/15 text-neon-green',

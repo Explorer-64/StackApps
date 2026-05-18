@@ -61,6 +61,12 @@ export interface App {
   scan_pwa_sw?: boolean;
   scan_viewport?: boolean;
   scan_safety_verified?: boolean;
+  /** Internal / experimental — not used for public tiers or score */
+  scan_lab_llms_full?: boolean;
+  scan_lab_openapi?: boolean;
+  scan_lab_webmcp?: boolean;
+  scan_lab_ap2_ucp_hint?: boolean;
+  scan_lab_verifiable_intent_hint?: boolean;
   scan_score?: number;
   scan_timestamp?: string;
   scan_public?: boolean;

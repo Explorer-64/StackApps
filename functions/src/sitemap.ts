@@ -10,7 +10,12 @@ const staticRoutes: SitemapRoute[] = [
   { loc: "https://stackapps.app/", priority: "1.0" },
   { loc: "https://stackapps.app/dashboard", priority: "0.9" },
   { loc: "https://stackapps.app/for-builders", priority: "0.9" },
+  { loc: "https://stackapps.app/scan", priority: "0.85" },
   { loc: "https://stackapps.app/faq", priority: "0.8" },
+  { loc: "https://stackapps.app/guides", priority: "0.75" },
+  { loc: "https://stackapps.app/guides/llms-txt", priority: "0.7" },
+  { loc: "https://stackapps.app/guides/faq", priority: "0.7" },
+  { loc: "https://stackapps.app/guides/cli-silver", priority: "0.7" },
   { loc: "https://stackapps.app/privacy", priority: "0.5" },
   { loc: "https://stackapps.app/terms", priority: "0.5" },
 ];

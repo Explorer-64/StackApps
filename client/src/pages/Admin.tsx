@@ -12,9 +12,11 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getApp } from 'firebase/app';
 import { collection, getDocs } from 'firebase/firestore';
 import { initializeFirebase, getFirestoreDb } from '@/lib/firebase';
+import { READINESS_LAB_CHECKS } from '@/utils/readinessLabs';
+import { McpBlueprintTestPanel } from '@/pages/McpBlueprintTest';
 
 type SortOption = 'newest' | 'highest_rated';
-type AdminTab = ModerationStatus | 'admins' | 'analytics';
+type AdminTab = ModerationStatus | 'admins' | 'analytics' | 'mcp_test';
 
 export default function Admin() {
   const { user, loading } = useCurrentUser();
@@ -75,7 +77,7 @@ export default function Admin() {
     (async () => {
       try {
         await initializeFirebase();
-        const db = getFirestoreDb();
+        const db = await getFirestoreDb();
         const snap = await getDocs(collection(db, 'free_scans'));
         let total = 0;
         let converted = 0;
@@ -114,6 +116,14 @@ export default function Admin() {
       }
     })();
   }, [activeTab, user, isSuperAdmin]);
+
+  const safeUpdate = async (id: string, data: Parameters<typeof updateApp>[1]) => {
+    try {
+      await updateApp(id, data);
+    } catch (e) {
+      alert(`Update failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
 
   const handleReject = async (app: App) => {
     const reason = prompt("Reason for rejection (optional):");
@@ -191,7 +201,7 @@ export default function Admin() {
   };
 
   const filteredApps = adminApps.filter(app => {
-      if (activeTab === 'admins' || activeTab === 'analytics') return false;
+      if (activeTab === 'admins' || activeTab === 'analytics' || activeTab === 'mcp_test') return false;
       const status = app.moderationStatus || 'pending_review';
       return status === activeTab;
   });
@@ -243,13 +253,13 @@ export default function Admin() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-between items-end sm:items-center mt-6 gap-4">
-            <div className="flex space-x-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-6 gap-4">
+            <div className="flex space-x-6 overflow-x-auto pb-1 w-full sm:w-auto">
                 {(['pending_review', 'approved', 'rejected'] as ModerationStatus[]).map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                        className={`whitespace-nowrap shrink-0 pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                             activeTab === tab
                                 ? 'border-blue-600 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -266,7 +276,7 @@ export default function Admin() {
                   <button
                     key="admins"
                     onClick={() => setActiveTab('admins')}
-                    className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    className={`whitespace-nowrap shrink-0 pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                       activeTab === 'admins'
                         ? 'border-blue-600 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -280,7 +290,7 @@ export default function Admin() {
                   <button
                     key="analytics"
                     onClick={() => setActiveTab('analytics')}
-                    className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    className={`whitespace-nowrap shrink-0 pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                       activeTab === 'analytics'
                         ? 'border-blue-600 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -290,9 +300,23 @@ export default function Admin() {
                     Analytics
                   </button>
                 )}
+                {isSuperAdmin && (
+                  <button
+                    key="mcp_test"
+                    onClick={() => setActiveTab('mcp_test')}
+                    className={`whitespace-nowrap shrink-0 pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      activeTab === 'mcp_test'
+                        ? 'border-blue-600 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                    data-testid="tab-mcp-test"
+                  >
+                    MCP Test
+                  </button>
+                )}
             </div>
 
-            {activeTab !== 'admins' && activeTab !== 'analytics' && (
+            {activeTab !== 'admins' && activeTab !== 'analytics' && activeTab !== 'mcp_test' && (
             <div className="flex items-center gap-2 pb-2">
                 <span className="text-sm text-gray-500">Sort by:</span>
                 <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
@@ -388,6 +412,14 @@ export default function Admin() {
           ) : (
             <div className="p-6 text-gray-500">Loading…</div>
           )
+        ) : activeTab === 'mcp_test' ? (
+          <div className="bg-cyber-black rounded-lg border border-cyber-light p-6">
+            <h2 className="text-lg font-bold text-white mb-1">MCP Blueprint Test</h2>
+            <p className="text-sm text-gray-400 mb-6">
+              Measures whether publishing a blueprint.txt reduces AI agent context overhead.
+            </p>
+            {user && <McpBlueprintTestPanel user={user} />}
+          </div>
         ) : isLoading ? (
             <div className="text-center py-12">Loading...</div>
         ) : sortedApps.length === 0 ? (
@@ -429,6 +461,31 @@ export default function Admin() {
                                                 Owner: {app.ownerId.slice(0, 8)}...
                                             </span>
                                         </div>
+                                        <div className="mt-4 rounded-lg border-2 border-dashed border-purple-500 bg-purple-50 p-3">
+                                            <div className="text-xs font-bold text-purple-950 mb-1">Labs (internal)</div>
+                                            <p className="text-[11px] text-purple-800/90 mb-2">
+                                                Emerging signals — not public tiers. Shown after any Site Readiness scan (live approval or{' '}
+                                                <span className="font-semibold">Re-run scan</span> on the Approved tab).
+                                            </p>
+                                            {!app.scan_timestamp ? (
+                                                <p className="text-xs text-amber-800 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mb-2">
+                                                    No scan on file yet for this app — run <span className="font-semibold">Re-run scan</span> on the
+                                                    right (Approved tab) to populate labs.
+                                                </p>
+                                            ) : null}
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                                                {READINESS_LAB_CHECKS.map((lab) => (
+                                                    <div key={lab.field} className="flex items-center justify-between gap-1 text-gray-800">
+                                                        <span className="truncate" title={lab.note}>
+                                                            {lab.label}
+                                                        </span>
+                                                        <span className={app[lab.field] === true ? 'text-green-700 font-bold' : 'text-gray-400'}>
+                                                            {app[lab.field] === true ? '✓' : '—'}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -439,7 +496,7 @@ export default function Admin() {
                                         <Button
                                             onClick={() => {
                                                 if (confirm(`Approve "${app.name}" as LIVE?`)) {
-                                                    updateApp(app.id, { 
+                                                    void safeUpdate(app.id, {
                                                         moderationStatus: 'approved',
                                                         status: 'live',
                                                         safetyVerified: true,
@@ -454,7 +511,7 @@ export default function Admin() {
                                         <Button
                                             onClick={() => {
                                                 if (confirm(`Approve "${app.name}" as BUILDING?`)) {
-                                                    updateApp(app.id, { 
+                                                    void safeUpdate(app.id, {
                                                         moderationStatus: 'approved',
                                                         status: 'building',
                                                         safetyVerified: false,
@@ -479,6 +536,21 @@ export default function Admin() {
 
                                 {activeTab === 'approved' && (
                                     <>
+                                        {app.status === 'building' && (
+                                            <Button
+                                                onClick={() => {
+                                                    if (confirm(`Upgrade "${app.name}" to Live?`)) {
+                                                        void safeUpdate(app.id, {
+                                                            status: 'live',
+                                                            safetyVerified: true,
+                                                        });
+                                                    }
+                                                }}
+                                                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                            >
+                                                Upgrade to Live
+                                            </Button>
+                                        )}
                                         <Button
                                             onClick={() => toggleFeatured(app)}
                                             variant={app.isFeatured ? "default" : "outline"}
@@ -499,7 +571,7 @@ export default function Admin() {
                                         <Button
                                             onClick={() => {
                                                 if (confirm(`Move "${app.name}" back to Pending Review?`)) {
-                                                    updateApp(app.id, { moderationStatus: 'pending_review' });
+                                                    void safeUpdate(app.id, { moderationStatus: 'pending_review' });
                                                 }
                                             }}
                                             variant="outline"

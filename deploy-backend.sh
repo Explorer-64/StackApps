@@ -14,6 +14,7 @@ gcloud run deploy $SERVICE_NAME \
     --platform managed \
     --region $REGION \
     --allow-unauthenticated \
+    --timeout=3600 \
     --set-env-vars "SECRETS_BACKEND=gcp,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,FIREBASE_STORAGE_BUCKET=stackapps-dcab1.firebasestorage.app" \
     --set-secrets "FIREBASE_SERVICE_ACCOUNT_KEY=stackapps-firebase-service-account:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,GOOGLEAI_API_KEY=GOOGLEAI_API_KEY:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest"
 

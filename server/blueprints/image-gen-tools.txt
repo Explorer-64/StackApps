@@ -1,0 +1,47 @@
+# BLUEPRINT: Image Gen Tools [MCP]
+# Version: 3.0.0
+# URL: https://stub.stackapps.app/image-gen-tools
+# Updated: 2026-05-15
+
+## CAPABILITIES
+generate-image: https://stub.stackapps.app/image-gen-tools/blueprints/generate-image.txt | mcp
+upscale-image: https://stub.stackapps.app/image-gen-tools/blueprints/upscale-image.txt | mcp
+remove-background: https://stub.stackapps.app/image-gen-tools/blueprints/remove-background.txt | mcp
+apply-style-transfer: https://stub.stackapps.app/image-gen-tools/blueprints/apply-style-transfer.txt | mcp
+batch-process: https://stub.stackapps.app/image-gen-tools/blueprints/batch-process.txt | mcp
+manage-billing: https://stub.stackapps.app/image-gen-tools/blueprints/manage-billing.txt | human-only
+
+## IDENTITY
+name: Image Gen Tools
+description: AI-powered text-to-image generation, upscaling, background removal, and style transfer at any resolution. Production-ready API built for developer scripts, CI pipelines, and agent workflows.
+category: design
+contact: support@imagegentools.dev
+
+## SUMMARY
+tagline: Text-to-image and image processing at any scale, via a developer-first MCP API.
+audience: Developers and automation engineers who need programmatic image generation and processing without a design tool.
+capabilities:
+  - generate-image: Generate a single raster image from a text prompt at any resolution
+  - upscale-image: Upscale an existing image 2x or 4x using AI super-resolution
+  - remove-background: Remove the background from any image, returning a transparent PNG
+  - apply-style-transfer: Apply an artistic style preset to an existing image
+  - batch-process: Queue multiple generate or transform jobs and poll for results
+
+## AUTH
+provider: api-key
+method: api-key
+
+## MCP
+server: image-gen-mcp
+install: claude mcp add image-gen -- uvx image-gen-tools-mcp --api-key <<api-key>>
+auth: IMAGE_GEN_API_KEY — from Dashboard > API Keys. Keys start with ig_live_.
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## TIMING
+image-generation: 8–25s — use max: 40s
+upscale-2x: 5–12s — use max: 20s
+background-removal: 3–8s — use max: 15s
+style-transfer: 10–30s — use max: 45s

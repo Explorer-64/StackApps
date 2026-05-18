@@ -1,13 +1,15 @@
 import { initializeApp, type FirebaseApp, type FirebaseOptions } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
-import { getStorage, type FirebaseStorage } from "firebase/storage";
+import type { Firestore } from "firebase/firestore";
+import type { FirebaseStorage } from "firebase/storage";
 
 let firebaseApp: FirebaseApp | null = null;
 let firebaseAuth: Auth | null = null;
 let firestoreDb: Firestore | null = null;
 let firebaseStorageRef: FirebaseStorage | null = null;
 let configPromise: Promise<FirebaseOptions> | null = null;
+let firestoreInitPromise: Promise<Firestore> | null = null;
+let storageInitPromise: Promise<FirebaseStorage> | null = null;
 
 const PRODUCTION_HOST_AUTH_DOMAIN: Record<string, string> = {
   "stackapps.app": "stackapps.app",
@@ -46,16 +48,14 @@ async function fetchFirebaseConfig(): Promise<FirebaseOptions> {
 
 async function initializeFirebase(): Promise<void> {
   if (firebaseApp) return;
-  
+
   if (!configPromise) {
     configPromise = fetchFirebaseConfig();
   }
-  
+
   const config = await configPromise;
   firebaseApp = initializeApp(config);
   firebaseAuth = getAuth(firebaseApp);
-  firestoreDb = getFirestore(firebaseApp);
-  firebaseStorageRef = getStorage(firebaseApp);
 }
 
 export function getFirebaseApp(): FirebaseApp {
@@ -72,18 +72,36 @@ export function getFirebaseAuth(): Auth {
   return firebaseAuth;
 }
 
-export function getFirestoreDb(): Firestore {
-  if (!firestoreDb) {
-    throw new Error("Firestore not initialized. Call initializeFirebase() first.");
+export async function getFirestoreDb(): Promise<Firestore> {
+  if (firestoreDb) return firestoreDb;
+  if (!firestoreInitPromise) {
+    firestoreInitPromise = (async () => {
+      await initializeFirebase();
+      if (!firebaseApp) {
+        throw new Error("Firebase app missing after initialization.");
+      }
+      const { getFirestore } = await import("firebase/firestore");
+      firestoreDb = getFirestore(firebaseApp);
+      return firestoreDb;
+    })();
   }
-  return firestoreDb;
+  return firestoreInitPromise;
 }
 
-export function getFirebaseStorageRef(): FirebaseStorage {
-  if (!firebaseStorageRef) {
-    throw new Error("Firebase Storage not initialized. Call initializeFirebase() first.");
+export async function getFirebaseStorageRef(): Promise<FirebaseStorage> {
+  if (firebaseStorageRef) return firebaseStorageRef;
+  if (!storageInitPromise) {
+    storageInitPromise = (async () => {
+      await initializeFirebase();
+      if (!firebaseApp) {
+        throw new Error("Firebase app missing after initialization.");
+      }
+      const { getStorage } = await import("firebase/storage");
+      firebaseStorageRef = getStorage(firebaseApp);
+      return firebaseStorageRef;
+    })();
   }
-  return firebaseStorageRef;
+  return storageInitPromise;
 }
 
 export { initializeFirebase };

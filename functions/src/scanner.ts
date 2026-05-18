@@ -29,8 +29,25 @@ type ScanBooleans = {
   scan_safety_verified: boolean;
 };
 
-type ScanFields = ScanBooleans & {
-  scan_score: number;
+type ScanLabFields = {
+  scan_lab_llms_full: boolean;
+  scan_lab_openapi: boolean;
+  scan_lab_webmcp: boolean;
+  scan_lab_ap2_ucp_hint: boolean;
+  scan_lab_verifiable_intent_hint: boolean;
+};
+
+type ScanFields = ScanBooleans &
+  ScanLabFields & {
+    scan_score: number;
+  };
+
+const EMPTY_LAB_FIELDS: ScanLabFields = {
+  scan_lab_llms_full: false,
+  scan_lab_openapi: false,
+  scan_lab_webmcp: false,
+  scan_lab_ap2_ucp_hint: false,
+  scan_lab_verifiable_intent_hint: false,
 };
 
 const checkKeys = [
@@ -55,6 +72,26 @@ function isStackAppsVerified(data: AppDocument): boolean {
 function withPath(baseUrl: string, path: string): string {
   return new URL(path, baseUrl).toString();
 }
+
+/** Prefer https for installability checks; many listings still use http:// while the site redirects. */
+function preferHttpsAppUrl(appUrl: string): string {
+  try {
+    const u = new URL(appUrl.trim());
+    if (u.protocol === "http:") {
+      u.protocol = "https:";
+      return u.href;
+    }
+    return appUrl.trim();
+  } catch {
+    return appUrl.trim();
+  }
+}
+
+const MANIFEST_FETCH_HEADERS: HeadersInit = {
+  Accept: "application/manifest+json, application/json;q=0.9, */*;q=0.1",
+  "User-Agent":
+    "Mozilla/5.0 (compatible; StackAppsReadiness/1.0; +https://stackapps.app) Chrome/120.0.0.0 Safari/537.36",
+};
 
 async function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
   const controller = new AbortController();
@@ -100,9 +137,76 @@ function referencesServiceWorker(html: string): boolean {
   return /serviceWorker\.register|navigator\.serviceWorker|\/?sw\.js|service-worker\.js/i.test(html);
 }
 
-async function checkPwaInstallable(appUrl: string): Promise<boolean> {
+function extractManifestHrefFromHtml(html: string): string | null {
+  for (const m of html.matchAll(/<link\b[^>]*>/gi)) {
+    const tag = m[0];
+    if (!/\brel\s*=\s*["']manifest["']/i.test(tag)) continue;
+    const hrefMatch = tag.match(/\bhref\s*=\s*["']([^"']+)["']/i);
+    if (hrefMatch?.[1]) return hrefMatch[1].trim();
+  }
+  return null;
+}
+
+function manifestPassesInstallableBar(manifest: {
+  name?: unknown;
+  short_name?: unknown;
+  start_url?: unknown;
+  display?: unknown;
+  icons?: unknown;
+}): boolean {
+  const nameOk =
+    (typeof manifest.name === "string" && manifest.name.trim().length > 0) ||
+    (typeof manifest.short_name === "string" && manifest.short_name.trim().length > 0);
+  if (!nameOk) return false;
+
+  if (typeof manifest.start_url !== "string" || manifest.start_url.trim().length === 0) {
+    return false;
+  }
+
+  const displayRaw = manifest.display;
+  const displayNorm =
+    typeof displayRaw === "string" ? displayRaw.trim().toLowerCase().replace(/_/g, "-") : "";
+  if (displayNorm !== "standalone" && displayNorm !== "fullscreen" && displayNorm !== "minimal-ui") {
+    return false;
+  }
+
+  if (!Array.isArray(manifest.icons)) {
+    return false;
+  }
+
+  const iconHasSize = (icon: object, w: number, h: number): boolean => {
+    const sizes = (icon as { sizes?: unknown }).sizes;
+    if (typeof sizes === "string") {
+      const s = sizes.toLowerCase();
+      const needle = `${w}x${h}`;
+      if (s.includes(needle)) return true;
+    }
+    const width = (icon as { width?: unknown }).width;
+    const height = (icon as { height?: unknown }).height;
+    if (typeof width === "number" && typeof height === "number") {
+      return width === w && height === h;
+    }
+    return false;
+  };
+
+  const has192 = manifest.icons.some((icon) => {
+    if (!icon || typeof icon !== "object") return false;
+    return iconHasSize(icon, 192, 192);
+  });
+
+  const has512 = manifest.icons.some((icon) => {
+    if (!icon || typeof icon !== "object") return false;
+    return iconHasSize(icon, 512, 512);
+  });
+
+  return has192 && has512;
+}
+
+async function checkPwaInstallable(appUrl: string, html: string): Promise<boolean> {
+  let baseForPwa: string;
   try {
-    const parsed = new URL(appUrl);
+    baseForPwa = preferHttpsAppUrl(appUrl);
+    const parsed = new URL(baseForPwa);
     if (parsed.protocol !== "https:") {
       return false;
     }
@@ -110,57 +214,40 @@ async function checkPwaInstallable(appUrl: string): Promise<boolean> {
     return false;
   }
 
-  const manifestUrl = withPath(appUrl, "/manifest.json");
-
-  try {
-    const response = await fetchWithTimeout(manifestUrl, { method: "GET", redirect: "follow" });
-    if (response.status !== 200) {
-      return false;
+  const candidates: string[] = [];
+  const fromHtml = extractManifestHrefFromHtml(html);
+  if (fromHtml) {
+    try {
+      candidates.push(new URL(fromHtml, baseForPwa).href);
+    } catch {
+      /* ignore bad href */
     }
-
-    const manifest = (await response.json()) as {
-      name?: unknown;
-      short_name?: unknown;
-      start_url?: unknown;
-      display?: unknown;
-      icons?: unknown;
-    };
-
-    const nameOk =
-      (typeof manifest.name === "string" && manifest.name.trim().length > 0) ||
-      (typeof manifest.short_name === "string" && manifest.short_name.trim().length > 0);
-    if (!nameOk) {
-      return false;
-    }
-
-    if (typeof manifest.start_url !== "string" || manifest.start_url.trim().length === 0) {
-      return false;
-    }
-
-    if (manifest.display !== "standalone" && manifest.display !== "fullscreen" && manifest.display !== "minimal-ui") {
-      return false;
-    }
-
-    if (!Array.isArray(manifest.icons)) {
-      return false;
-    }
-
-    const has192 = manifest.icons.some((icon) => {
-      if (!icon || typeof icon !== "object") return false;
-      const sizes = (icon as { sizes?: unknown }).sizes;
-      return typeof sizes === "string" && sizes.includes("192x192");
-    });
-
-    const has512 = manifest.icons.some((icon) => {
-      if (!icon || typeof icon !== "object") return false;
-      const sizes = (icon as { sizes?: unknown }).sizes;
-      return typeof sizes === "string" && sizes.includes("512x512");
-    });
-
-    return has192 && has512;
-  } catch {
-    return false;
   }
+  for (const path of ["/manifest.webmanifest", "/site.webmanifest", "/manifest.json"]) {
+    candidates.push(withPath(baseForPwa, path));
+  }
+
+  const seen = new Set<string>();
+  for (const manifestUrl of candidates) {
+    if (seen.has(manifestUrl)) continue;
+    seen.add(manifestUrl);
+    try {
+      const response = await fetchWithTimeout(manifestUrl, {
+        method: "GET",
+        redirect: "follow",
+        headers: MANIFEST_FETCH_HEADERS,
+      });
+      if (response.status !== 200) continue;
+      const text = await response.text();
+      const trimmed = text.replace(/^\uFEFF/, "").trim();
+      if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) continue;
+      const manifest = JSON.parse(trimmed) as Parameters<typeof manifestPassesInstallableBar>[0];
+      if (manifestPassesInstallableBar(manifest)) return true;
+    } catch {
+      continue;
+    }
+  }
+  return false;
 }
 
 async function fetchTextIf200(url: string): Promise<string> {
@@ -178,6 +265,57 @@ async function fetchTextIf200(url: string): Promise<string> {
 async function isAdminUser(uid: string): Promise<boolean> {
   const snap = await db.collection("admin_users").doc(uid).get();
   return snap.exists;
+}
+
+async function computeLabSignals(
+  appUrl: string,
+  html: string,
+  scan_llms: boolean,
+  scan_blueprint: boolean,
+): Promise<ScanLabFields> {
+  const scan_lab_llms_full = await statusIs200(withPath(appUrl, "/llms-full.txt"), "HEAD");
+
+  const openapiPaths = [
+    "/openapi.json",
+    "/swagger.json",
+    "/api/openapi.json",
+    "/v1/openapi.json",
+    "/openapi.yaml",
+    "/swagger/v1/swagger.json",
+  ];
+  let scan_lab_openapi = false;
+  for (const p of openapiPaths) {
+    if (await statusIs200(withPath(appUrl, p), "HEAD")) {
+      scan_lab_openapi = true;
+      break;
+    }
+  }
+
+  const wellKnownMcp = await statusIs200(withPath(appUrl, "/.well-known/mcp"), "HEAD");
+  const scan_lab_webmcp =
+    wellKnownMcp ||
+    /\bwebmcp\b/i.test(html) ||
+    /rel\s*=\s*["'][^"']*mcp[^"']*["']/i.test(html);
+
+  let combinedDocs = "";
+  if (scan_llms) {
+    combinedDocs += await fetchTextIf200(withPath(appUrl, "/llms.txt"));
+  }
+  if (scan_blueprint) {
+    combinedDocs += await fetchTextIf200(withPath(appUrl, "/blueprint.txt"));
+  }
+  const haystack = `${combinedDocs}\n${html.slice(0, 12000)}`;
+  const scan_lab_ap2_ucp_hint = /\b(AP2|UCP)\b|agent\s+payments?|universal\s+commerce/i.test(haystack);
+  const scan_lab_verifiable_intent_hint =
+    /verifiable\s+intent|FIDO[^.\n]{0,48}agent|agentic[^.\n]{0,48}credential/i.test(haystack);
+
+  return {
+    scan_lab_llms_full,
+    scan_lab_openapi,
+    scan_lab_webmcp,
+    scan_lab_ap2_ucp_hint,
+    scan_lab_verifiable_intent_hint,
+  };
 }
 
 export async function scanApp(data: AppDocument): Promise<ScanFields> {
@@ -200,7 +338,7 @@ export async function scanApp(data: AppDocument): Promise<ScanFields> {
       scan_safety_verified: isStackAppsVerified(data),
     };
 
-    return { ...emptyChecks, scan_score: 0 };
+    return { ...emptyChecks, ...EMPTY_LAB_FIELDS, scan_score: 0 };
   }
 
   const htmlPromise = readHtml(appUrl);
@@ -209,29 +347,19 @@ export async function scanApp(data: AppDocument): Promise<ScanFields> {
   const sitemapPromise = statusIs200(withPath(appUrl, "/sitemap.xml"), "HEAD");
   const faqPromise = statusIs200(withPath(appUrl, "/faq"), "HEAD");
   const blueprintPromise = statusIs200(withPath(appUrl, "/blueprint.txt"), "HEAD");
-  const pwaAndroidPromise = checkPwaInstallable(appUrl);
   const swHeadPromise = statusIs200(withPath(appUrl, "/sw.js"), "HEAD");
 
-  const [
-    htmlResult,
-    scan_llms,
-    scan_robots,
-    scan_sitemap,
-    scan_faq,
-    scan_blueprint,
-    scan_pwa_android,
-    swHead,
-  ] =
-    await Promise.all([
-      htmlPromise,
-      llmsPromise,
-      robotsPromise,
-      sitemapPromise,
-      faqPromise,
-      blueprintPromise,
-      pwaAndroidPromise,
-      swHeadPromise,
-    ]);
+  const [htmlResult, scan_llms, scan_robots, scan_sitemap, scan_faq, scan_blueprint, swHead] = await Promise.all([
+    htmlPromise,
+    llmsPromise,
+    robotsPromise,
+    sitemapPromise,
+    faqPromise,
+    blueprintPromise,
+    swHeadPromise,
+  ]);
+
+  const scan_pwa_android = await checkPwaInstallable(appUrl, htmlResult.html);
 
   const cliPattern = /npm install\s+-g\s+\S+|npx\s+\S+|uvx\s+\S+|pipx\s+\S+|brew install\s+\S+|pip install\s+\S+|cargo install\s+\S+/i;
 
@@ -287,8 +415,11 @@ export async function scanApp(data: AppDocument): Promise<ScanFields> {
     scan_safety_verified: isStackAppsVerified(data),
   };
 
+  const labFields = await computeLabSignals(appUrl, htmlResult.html, scan_llms, scan_blueprint);
+
   return {
     ...checks,
+    ...labFields,
     scan_score: checkKeys.reduce((score, key) => score + (checks[key] ? 1 : 0), 0),
   };
 }
@@ -404,5 +535,10 @@ export const manualRescan = onCall(async (request) => {
     scan_safety_verified: updatedData.scan_safety_verified === true,
     scan_score: typeof updatedData.scan_score === "number" ? updatedData.scan_score : 0,
     scan_timestamp: typeof timestamp?.toDate === "function" ? timestamp.toDate().toISOString() : null,
+    scan_lab_llms_full: updatedData.scan_lab_llms_full === true,
+    scan_lab_openapi: updatedData.scan_lab_openapi === true,
+    scan_lab_webmcp: updatedData.scan_lab_webmcp === true,
+    scan_lab_ap2_ucp_hint: updatedData.scan_lab_ap2_ucp_hint === true,
+    scan_lab_verifiable_intent_hint: updatedData.scan_lab_verifiable_intent_hint === true,
   };
 });

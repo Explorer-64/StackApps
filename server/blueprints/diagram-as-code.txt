@@ -1,0 +1,78 @@
+# BLUEPRINT: Diagram-as-Code
+# Version: 2.5.0
+# URL: https://stub.stackapps.app/diagram-as-code
+# Updated: 2026-05-15
+
+## IDENTITY
+name: Diagram-as-Code
+description: Author architecture, sequence, and topology diagrams from structured text. Outputs SVG or PNG diagram files — not app icons, not branding assets.
+category: developer-tools
+contact: registry@stackapps.app
+
+## AUTH
+provider: api-key
+method: api-key
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## CAPABILITY: sequence-from-steps
+description: Generate a UML sequence diagram from a list of chronological interaction steps.
+input:
+  - name: steps
+    type: string
+    required: true
+    description: JSON array of interaction steps, each with actor, action, and target fields.
+  - name: title
+    type: string
+    required: false
+    description: Diagram title shown at the top.
+output:
+  - type: file
+    description: SVG sequence diagram.
+auth-required: true
+scope: file-download
+
+### MCP
+tool: uml_sequence_from_trace
+
+## CAPABILITY: topology-from-inventory
+description: Render a network or service topology graph from a YAML-style node and edge inventory.
+input:
+  - name: inventory_yaml
+    type: string
+    required: true
+    description: YAML string listing nodes (name, type) and edges (from, to, label).
+  - name: layout
+    type: string
+    required: false
+    description: Graph layout algorithm — "hierarchical", "force", or "circular". Default "hierarchical".
+output:
+  - type: file
+    description: SVG topology diagram.
+auth-required: true
+scope: file-download
+
+### MCP
+tool: topology_from_inventory
+
+## CAPABILITY: export-png
+description: Render any diagram to PNG at a specified DPI for embedding in slides or documents.
+input:
+  - name: diagram_id
+    type: string
+    required: true
+    description: ID of a previously generated diagram to export.
+  - name: dpi
+    type: number
+    required: false
+    description: Output DPI — 96, 144, or 288. Default 144.
+output:
+  - type: file
+    description: PNG file at the requested DPI.
+auth-required: true
+scope: file-download
+
+### MCP
+tool: export_png

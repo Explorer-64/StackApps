@@ -1,0 +1,74 @@
+# BLUEPRINT: Web Perf Sentinel
+# Version: 2.5.0
+# URL: https://stub.stackapps.app/web-perf-tools
+# Updated: 2026-05-15
+
+## IDENTITY
+name: Web Perf Sentinel
+description: Core Web Vitals auditing, cache header checks, and render-blocking script analysis for public URLs.
+category: developer-tools
+contact: registry@stackapps.app
+
+## AUTH
+provider: api-key
+method: api-key
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## CAPABILITY: probe-vitals
+description: Audit a public URL for LCP element candidates, cache-control headers on static assets, and render-blocking script patterns.
+input:
+  - name: url
+    type: string
+    required: true
+    description: Full HTTPS URL of the page to audit.
+  - name: categories
+    type: string
+    required: false
+    description: Comma-separated audit categories — "vitals", "cache", "scripts". Default runs all.
+output:
+  - type: json
+    description: Audit results per category with pass/fail status, affected elements, and remediation hints.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: probe_vitals
+
+## CAPABILITY: compare-urls
+description: Compare TTFB and total resource counts between two origins to identify relative performance gaps.
+input:
+  - name: url_a
+    type: string
+    required: true
+    description: First URL.
+  - name: url_b
+    type: string
+    required: true
+    description: Second URL to compare against.
+output:
+  - type: json
+    description: Side-by-side comparison with TTFB, resource count, and total transfer size for each URL.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: compare_urls
+
+## CAPABILITY: check-cache-headers
+description: Summarize cache-control header presence and max-age values for static assets on a page.
+input:
+  - name: url
+    type: string
+    required: true
+    description: Full HTTPS URL to inspect.
+output:
+  - type: json
+    description: Per-asset cache status with URL, cache-control value, and whether long-term caching is set.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: check_cache_headers

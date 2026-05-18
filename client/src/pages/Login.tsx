@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
+
+function safeRedirectPath(next: string | null): string | null {
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return null;
+  return next;
+}
 import { setPageSeo } from '@/utils/seo';
 import { 
   signInWithPopup, 
@@ -47,7 +52,7 @@ export default function Login() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      setLocation('/hub');
+      setLocation(safeRedirectPath(new URLSearchParams(window.location.search).get('next')) ?? '/hub');
     } catch (err: any) {
       setError(err.message || 'Failed to sign in with Google');
     } finally {
@@ -67,7 +72,7 @@ export default function Login() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      setLocation('/hub');
+      setLocation(safeRedirectPath(new URLSearchParams(window.location.search).get('next')) ?? '/hub');
     } catch (err: any) {
       setError(err.message || `Failed to ${isSignUp ? 'sign up' : 'sign in'}`);
     } finally {

@@ -2,7 +2,7 @@
   "id": "https://stackapps.app/",
   "name": "The Stackhouse by StackApps",
   "short_name": "StackApps",
-  "description": "A curated directory of browser-ready indie apps. List free; live-approved apps get a backlink, StackApps Verified badge, and site readiness scan.",
+  "description": "Open-source AI & crawl readiness audit. Optional curated listings on The Stackhouse with embed badge and twelve-signal scan tiers when live.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "/",

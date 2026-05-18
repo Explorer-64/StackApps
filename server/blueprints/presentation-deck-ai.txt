@@ -1,0 +1,74 @@
+# BLUEPRINT: Presentation Deck Builder
+# Version: 2.5.0
+# URL: https://stub.stackapps.app/presentation-deck-ai
+# Updated: 2026-05-15
+
+## IDENTITY
+name: Presentation Deck Builder
+description: Turn outlines into themed slide titles, bullet points, and speaker notes. Produces structured slide content — not visual imagery, icons, or image assets.
+category: marketing
+contact: registry@stackapps.app
+
+## AUTH
+provider: api-key
+method: api-key
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## CAPABILITY: outline-to-slides
+description: Transform a hierarchical outline into an ordered list of slide titles and bullet points with suggested layout types.
+input:
+  - name: outline
+    type: string
+    required: true
+    description: Hierarchical outline text using indentation or markdown list syntax.
+  - name: tone
+    type: string
+    required: false
+    description: Presentation tone — "formal", "conversational", or "sales". Default "conversational".
+output:
+  - type: json
+    description: Ordered array of slides, each with title, bullet array, and suggested layout type.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: outline_to_slides
+
+## CAPABILITY: speaker-notes-expand
+description: Expand terse slide bullets into short spoken cues for presenter notes.
+input:
+  - name: slide_bullets
+    type: string
+    required: true
+    description: JSON array of bullet strings from a single slide.
+  - name: duration_seconds
+    type: number
+    required: false
+    description: Target speaking time for the slide in seconds. Default 90.
+output:
+  - type: json
+    description: Speaker notes string calibrated to the requested speaking duration.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: speaker_notes_expand
+
+## CAPABILITY: aspect-ratio-preset
+description: Return slide dimension recommendations for a standard presentation format.
+input:
+  - name: format
+    type: string
+    required: true
+    description: Format target — "widescreen" (16:9), "classic" (4:3), or "portrait" (9:16).
+output:
+  - type: json
+    description: Pixel dimensions, recommended slide count range, and font size guidance for the format.
+auth-required: false
+scope: read-only
+
+### MCP
+tool: aspect_ratio_preset

@@ -72,12 +72,20 @@ export const publicScan = onRequest({ cors: true }, async (req, res) => {
   }
 
   const results = await scanApp({ appUrl: url });
+  const {
+    scan_lab_llms_full: _lf,
+    scan_lab_openapi: _oa,
+    scan_lab_webmcp: _wm,
+    scan_lab_ap2_ucp_hint: _ap2,
+    scan_lab_verifiable_intent_hint: _vi,
+    ...publicScanResults
+  } = results;
 
   const doc = {
     domain: hostname,
     url,
-    scan_score: results.scan_score,
-    scan_results: results,
+    scan_score: publicScanResults.scan_score,
+    scan_results: publicScanResults,
     scan_timestamp: new Date().toISOString(),
     converted: false,
     converted_at: null,

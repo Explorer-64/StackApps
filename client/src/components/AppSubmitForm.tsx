@@ -79,7 +79,7 @@ export function AppSubmitForm({ editingApp, ownerId, onSubmit, onCancel, isSubmi
         <div className="bg-cyber-black border border-cyber-light rounded-lg p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
-              ['🔗', 'Dofollow backlink', 'A server-rendered page at stackapps.app/apps/[slug]'], ['🛡️', 'StackApps Verified badge', 'Embeddable SVG at stackapps.app/api/badge/[id].svg'], ['✅', 'Readiness scan', '10 checks: llms.txt, PWA, Blueprint Protocol & more'],
+              ['🔗', 'Dofollow backlink', 'A server-rendered page at stackapps.app/apps/[slug]'], ['🛡️', 'Embed badge (live)', 'SVG shows StackApps Verified when your app is live-approved; links to your proof page.'], ['✅', 'Readiness scan', 'Twelve checks (crawl, MCP, CLI, PWA, blueprint…). Listings show Bronze / Silver / Gold tiers.'],
             ].map(([icon, label, description]) => (
               <div key={label} className="flex gap-3">
                 <span className="text-lg leading-none">{icon}</span>

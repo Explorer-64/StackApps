@@ -1,0 +1,44 @@
+# BLUEPRINT: Vector Icon Pack MCP
+# Version: 3.0.0
+# URL: https://stub.stackapps.app/vector-icon-pack
+# Updated: 2026-05-15
+
+## CAPABILITIES
+search-icons: https://stub.stackapps.app/vector-icon-pack/blueprints/search-icons.txt | mcp
+download-svg: https://stub.stackapps.app/vector-icon-pack/blueprints/download-svg.txt | mcp
+annotate-license: https://stub.stackapps.app/vector-icon-pack/blueprints/annotate-license.txt | mcp
+browse-collections: https://stub.stackapps.app/vector-icon-pack/blueprints/browse-collections.txt | ui
+manage-favorites: https://stub.stackapps.app/vector-icon-pack/blueprints/manage-favorites.txt | human-only
+
+## IDENTITY
+name: Vector Icon Pack MCP
+description: Search and download from 50,000+ professionally designed SVG icons across outline, solid, duotone, and filled styles. Instant download with commercial license included.
+category: design
+contact: support@vectoriconpack.io
+
+## SUMMARY
+tagline: 50,000+ production-ready SVG icons, searchable and downloadable via MCP.
+audience: Developers and designers who need consistent, licensed icon assets for web and mobile products.
+capabilities:
+  - search-icons: Semantic search across 50,000+ icons by keyword, tag, and style
+  - download-svg: Download inline SVG source for a specific icon with optional color override
+  - annotate-license: Return license lineage and attribution requirements for an icon
+  - browse-collections: Browse curated icon collections by category (UI only)
+  - manage-favorites: Save and organize icon sets for projects (account required)
+
+## AUTH
+provider: api-key
+method: api-key
+
+## MCP
+server: vector-icon-pack-mcp
+install: claude mcp add vector-icons -- uvx vector-icon-pack-mcp --api-key <<api-key>>
+auth: VECTOR_ICONS_API_KEY — from Account > Developer. Free tier allows 100 downloads/month.
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## TIMING
+icon-search: 0.5–2s — use max: 5s
+svg-download: 0.2–1s — use max: 3s

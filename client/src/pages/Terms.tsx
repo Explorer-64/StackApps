@@ -7,7 +7,7 @@ export default function Terms() {
   useEffect(() => {
     setPageSeo(
       'Terms of Service — StackApps',
-      'Rules for using StackApps: submissions, reviews, moderation, public readiness scans, StackApps Verified badges, backlinks, and limitations.',
+      'Rules for using StackApps: submissions, reviews, moderation, public readiness scans, live embed badges, backlinks, and limitations.',
     );
   }, []);
 
@@ -48,12 +48,12 @@ export default function Terms() {
 
             <section>
               <h2 className="text-xl font-bold text-white mb-3">Moderation</h2>
-              <p>All app submissions are subject to moderation. We reserve the right to approve, reject, or remove any content that violates our guidelines or these terms. Backlinks, StackApps Verified badge states, and readiness scans are available for apps approved as live.</p>
+              <p>All app submissions are subject to moderation. We reserve the right to approve, reject, or remove any content that violates our guidelines or these terms. Backlinks, live embed badge presentation, readiness scan results and tier labels are available for apps approved as live.</p>
             </section>
 
             <section>
               <h2 className="text-xl font-bold text-white mb-3">Readiness Scans and Badges</h2>
-              <p>By submitting an app URL, you allow StackApps to fetch public pages and public files from that URL to produce readiness results. Scan results, scores, listing backlinks, and StackApps Verified badge status may be displayed publicly for live-approved listings. Owners may request manual rescans, subject to cooldown limits.</p>
+              <p>By submitting an app URL, you allow StackApps to fetch public pages and public files from that URL to produce readiness results. Scan results, scores, tier labels, listing backlinks, and embed badge status may be displayed publicly for live-approved listings. Owners may request manual rescans, subject to cooldown limits.</p>
             </section>
 
             <section>

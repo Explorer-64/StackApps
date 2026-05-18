@@ -1,6 +1,6 @@
 import type { App } from '@shared/schema';
 import { Link } from 'wouter';
-import { getPwaBadge, hasBlueprint, isVerified } from '@/utils/scanBadges';
+import { getPwaBadge, getReadinessTier, hasBlueprint, readinessTierBadgeClassName, readinessTierLabel } from '@/utils/scanBadges';
 
 interface Props {
   app: App;
@@ -10,9 +10,9 @@ export function AppCard({ app }: Props) {
   const isBuilding = app.status === 'building';
   const isLiveApproved = app.status === 'live' && app.moderationStatus === 'approved';
   const hasScan = Boolean(app.scan_timestamp);
-  const verified = hasScan && isVerified(app);
+  const tier = hasScan ? getReadinessTier(app) : null;
   const pwaBadge = hasScan ? getPwaBadge(app) : null;
-  const blueprint = hasScan && hasBlueprint(app);
+  const blueprint = hasScan && hasBlueprint(app) && tier !== 'gold';
   
   return (
     <Link href={`/app/${app.id}`} className="block h-full group" data-testid={`card-app-${app.id}`} data-agent-id={`app-card-${app.id}`}>
@@ -58,14 +58,13 @@ export function AppCard({ app }: Props) {
           </div>
           
           <p className="text-gray-400 mb-4 line-clamp-2 text-sm flex-grow">{app.description}</p>
-          {hasScan && (verified || pwaBadge || blueprint) && (
+          {hasScan && (tier || pwaBadge || blueprint) && (
             <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-              {verified && (
+              {tier && (
                 <span
-                  className="inline-flex items-center rounded-sm px-2 py-1 text-xs font-bold text-white"
-                  style={{ backgroundColor: '#15803d' }}
+                  className={`inline-flex items-center rounded-sm border px-2 py-1 text-xs font-bold ${readinessTierBadgeClassName(tier)}`}
                 >
-                  StackApps Verified ✓
+                  {readinessTierLabel(tier).name} · {readinessTierLabel(tier).tagline}
                 </span>
               )}
               {pwaBadge && (

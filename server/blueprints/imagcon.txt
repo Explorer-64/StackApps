@@ -1,0 +1,53 @@
+# BLUEPRINT: Imagcon [MCP]
+# Version: 3.0.0
+# URL: https://imagcon.app
+# Updated: 2026-05-15
+
+## CAPABILITIES
+generate-icon-set: https://imagcon.app/blueprints/generate-icon-set.txt | mcp
+generate-splash-screens: https://imagcon.app/blueprints/generate-splash-screens.txt | mcp
+list-saved-icon-sets: https://imagcon.app/blueprints/list-saved-icon-sets.txt | mcp
+download-icon-set: https://imagcon.app/blueprints/download-icon-set.txt | mcp
+check-credits: https://imagcon.app/blueprints/check-credits.txt | mcp
+edit-image: https://imagcon.app/blueprints/edit-image.txt | human-only
+browse-inspiration: https://imagcon.app/blueprints/browse-inspiration.txt | ui
+purchase-credits: https://imagcon.app/blueprints/purchase-credits.txt | human-only
+manage-api-keys: https://imagcon.app/blueprints/manage-api-keys.txt | human-only
+
+## IDENTITY
+name: Imagcon
+description: Generates a complete, deployment-ready set of PWA app icons from a single text description — all required sizes, safe-zone masking, iOS Xcode icons, Android icons, splash screens, and manifest.json, packaged as a ZIP. Also supports uploading your own image and editing it with crop, draw, text overlay, and AI refinement before export.
+category: design
+contact: support@imagcon.app
+
+## SUMMARY
+tagline: Generate a complete PWA icon set from a single text description — every size, every platform, packaged as a ZIP.
+audience: Indie developers and vibe coders who need professional app icons for PWA, iOS, and Android without a designer.
+capabilities:
+  - generate-icon-set: Full PWA icon package (27 files + manifest.json + Xcode + Android) from a text prompt
+  - generate-splash-screens: 16 iOS splash screens packaged as a ZIP
+  - list-saved-icon-sets: List previously generated icon sets in the user's gallery
+  - download-icon-set: Re-download a saved icon set ZIP by ID without regenerating
+  - check-credits: Report the user's remaining generation credit balance
+  - edit-image: Human-only — manual crop / draw / text overlay / AI refine on an existing image before export. Agents should call generate-icon-set with a refined prompt instead.
+
+## AUTH
+provider: firebase
+methods: email-password, oauth-google
+
+## MCP
+server: imagcon-mcp
+install: claude mcp add imagcon -- uvx imagcon-mcp --api-key <<api-key>>
+auth: IMAGCON_API_KEY — user's Imagcon API key from Account Settings > API Keys (https://imagcon.app/api-keys). Keys start with ic_live_ and are issued long-lived.
+
+## ACCESS
+preferred: mcp
+last-resort: ui
+
+## TIMING
+# Format: <operation-label>: <observed-range> — use max: <N>s
+ai-image-generation: 15–45s — use max: 60s
+ai-image-refinement: 20–90s — use max: 120s
+pwa-icon-resizing: 5–15s — use max: 30s
+splash-screen-generation: 20–60s — use max: 90s
+file-upload: 2–5s — use max: 15s

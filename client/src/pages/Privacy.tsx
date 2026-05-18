@@ -50,7 +50,7 @@ export default function Privacy() {
                 <li>Display your app submissions in our directory</li>
                 <li>Show your reviews and ratings to other users</li>
                 <li>Check public app URLs and common public files such as llms.txt, robots.txt, sitemap.xml, manifest.json, sw.js, FAQ pages, and blueprint.txt</li>
-                <li>Display readiness results, StackApps Verified badge status, and scan scores on live-approved listings</li>
+                <li>Display readiness results, tier labels, embed badge status, and scan scores on live-approved listings</li>
               </ul>
             </section>
 

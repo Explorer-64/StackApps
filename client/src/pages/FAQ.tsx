@@ -7,7 +7,7 @@ export default function FAQ() {
   useEffect(() => {
     setPageSeo(
       'StackApps FAQ — AIEO/GEO readiness scans and AI discoverability',
-      'Answers about StackApps: free technical audits, what crawlers can discover about your app, the vetted registry, StackApps Verified, StackLaunch, privacy, and accounts.',
+      'Answers about StackApps: free technical audits, twelve readiness checks, guides (/guides), first-party CLI and MCP for the public scan, Bronze/Silver/Gold tiers, the live-approved embed badge, The Stackhouse, StackLaunch, privacy, and accounts.',
     );
   }, []);
 
@@ -15,12 +15,17 @@ export default function FAQ() {
     {
       question: 'What is StackApps?',
       answer:
-        'StackApps is primarily a free AIEO/GEO (AI Engine Optimization / Generative Engine Optimization) technical audit for indie SaaS founders and technical builders: run an automated check on your live app URL to see what search engines and AI crawlers can discover. Results surface on your public StackApps page — The Stackhouse is the proof layer (backlink, badge, reviews), not the whole product story.',
+        'StackApps is first a free, open-source technical audit: twelve concrete signals for whether search and AI systems can find, read, and hook into your live app (Lighthouse-style, for crawl and agent discovery). When you list and go live, you also get public proof on The Stackhouse (page, embed badge, tiers, reviews). The scan and methodology are the core story; the registry is curated credibility — not a generic AI link directory.',
+    },
+    {
+      question: 'How is StackApps different from other AI directories or GEO tools?',
+      answer:
+        'We lead with inspectable compliance: every check ships in public GitHub, not a black-box score. The Stackhouse is human-moderated and tied to that audit on your listing — we are not selling paid placement or opaque "AI submission" volume. Many competitors stop at llms.txt generation or marketing GEO reports; we publish the same scanner we run in production and separate live registry status from Bronze/Silver/Gold readiness tiers.',
     },
     {
       question: 'How will getting my app verified here help me sell it?',
       answer:
-        'Three ways. First, proof: the technical audit shows you cleared the bar for AI-ready discoverability. Second, credibility: a live-approved app gets a crawler-visible proof page that AI systems like Perplexity and ChatGPT-search can find and cite, plus an embeddable StackApps Verified badge for your own site. Third, evaluators browse verified apps on The Stackhouse — builders and early adopters looking for tools in your category. The readiness scan checks whether the signals AI crawlers actually look for are in place — llms.txt, robots.txt, sitemap.xml, and more. Most builders skip these and wonder why AI tools cannot find them. Once you clear the bar on the audit, the most important question before investing more time or money is whether there is actually a market for it — and if so, what direction makes it most marketable. That is where StackLaunch starts. stacklaunch.app',
+        'Three ways. First, proof: the twelve-point technical audit shows what search and AI systems can actually see (and your listing shows a Bronze, Silver, or Gold readiness tier from those checks). Second, credibility: a live-approved app gets a crawler-visible proof page that AI systems can find and cite, plus an embeddable SVG badge that says StackApps Verified — that badge reflects live registry approval, not the same thing as hitting every check. Third, evaluators browse The Stackhouse for tools in your category. Most builders skip llms.txt, robots, and sitemap and wonder why AI tools cannot find them. Once you clear the crawl baseline, the next question is market fit — that is where StackLaunch starts. stacklaunch.app',
     },
     {
       question: 'What is AIEO/GEO?',
@@ -30,22 +35,37 @@ export default function FAQ() {
     {
       question: 'What does the scan check?',
       answer:
-        'One technical audit, grouped with one-line explanations each. Discoverability & crawl health: Site reachable (URL loads and returns usable HTML); robots.txt (crawler rules file exists); sitemap.xml (URL inventory for crawlers); llms.txt (machine-oriented site map for AI systems). Understandable to machines: FAQ presence (dedicated FAQ route/page); Blueprint Protocol (blueprint.txt with declared agent flows + stable selectors). Installable / mobile-ready: Android PWA (web app manifest with display intent); iOS PWA (Apple web-app meta); Service worker (offline/install path); Viewport meta (mobile rendering).',
+        'Twelve automated checks (score 12/12 if all pass). Discoverability: site reachable; robots.txt; sitemap.xml; llms.txt. Machine & operator signals: FAQ page (/faq); Blueprint Protocol (blueprint.txt); MCP (documented or HTML hints); CLI (common install patterns in page or docs). PWA / mobile: Android installability-style manifest; iOS web-app meta; service worker; viewport meta. Listings show Bronze / Silver / Gold tiers from subsets of these checks; PWA Ready is a separate badge. Each row on your listing has a ? popover explaining the check. Short scanner-aligned write-ups live at https://stackapps.app/guides (llms.txt, /faq, and CLI/Silver).',
+    },
+    {
+      question: 'Where are the StackApps guides?',
+      answer:
+        'Public guides index: https://stackapps.app/guides — three articles in order: llms.txt (https://stackapps.app/guides/llms-txt), FAQ at /faq (https://stackapps.app/guides/faq), and CLI vs Silver tier (https://stackapps.app/guides/cli-silver). They match what the open-source scanner does, not aspirational behavior.',
+    },
+    {
+      question: 'Does StackApps ship its own CLI or MCP for the scan?',
+      answer:
+        'Yes. The same public scan you get on https://stackapps.app/scan is available from a first-party CLI (`stackapps-cli`, command `stackapps scan <url>`) and a stdio MCP server (`stackapps-mcp`, tool `readiness_scan` with a full https URL). Source lives under `packages/stackapps-cli` and `packages/stackapps-mcp` in the GitHub repo; install paths and clone/local build notes are in https://stackapps.app/llms.txt under “First-party CLI & MCP”. After npm publish, `npx stackapps-cli` / `npx stackapps-mcp` work like any other Node tools.',
+    },
+    {
+      question: 'What are Bronze, Silver, and Gold?',
+      answer:
+        'They are readiness tiers on your listing, derived from the twelve checks. Bronze means you pass the discoverability baseline (site reachable, llms.txt, robots.txt, sitemap.xml). Silver adds CLI signals, FAQ page, and viewport meta on top of Bronze. Gold adds MCP and blueprint.txt on top of Silver. The embeddable SVG badge saying StackApps Verified is separate: it reflects live approval, not which tier you reached.',
     },
     {
       question: 'What is MCP?',
       answer:
-        'MCP (Model Context Protocol) is an emerging standard for connecting AI clients to tools and data in a structured way. Your app does not need MCP to pass the StackApps scan; the scan measures crawler-visible signals (llms.txt, blueprint, PWA, etc.) that make you legible to search and AI systems.',
+        'MCP (Model Context Protocol) is an emerging standard for connecting AI clients to tools and data in a structured way. StackApps scores MCP as one of twelve checks. You do not need MCP for Bronze or Silver, but you do need MCP (plus blueprint) to reach Gold. The scan looks for MCP in HTML or documented install hints (e.g. in llms.txt or blueprint.txt).',
     },
     {
       question: 'What is CLI availability?',
       answer:
-        'CLI availability means your product offers a command-line interface or scriptable entry point beyond the browser UI — useful for power users and automation. StackApps does not require a CLI; it is an optional signal some technical products publish for operator-style workflows.',
+        'CLI availability means we detect common install or run commands (npx, npm -g, brew, pipx, uvx, etc.) in your page or linked docs files. It is one of twelve checks. Bronze does not require CLI; Silver does (together with baseline, FAQ page, and viewport).',
     },
     {
       question: 'What is Blueprint Protocol?',
       answer:
-        'Blueprint Protocol is a plaintext contract (blueprint.txt) that tells AI agents how your app is meant to behave: capabilities, auth, and step-by-step flows with stable selectors. Think of it as a bonus signal: if it is present, agents can operate your product more reliably instead of guessing. https://github.com/Explorer-64/blueprint-protocol',
+        'Blueprint Protocol is a plaintext contract (blueprint.txt) that tells AI agents how your app is meant to behave: capabilities, auth, and step-by-step flows with stable selectors. It is one of twelve scored checks and is required for Gold (together with MCP). https://github.com/Explorer-64/blueprint-protocol',
     },
     {
       question: 'What is StackLaunch?',
@@ -60,12 +80,12 @@ export default function FAQ() {
     {
       question: 'Is StackApps free?',
       answer:
-        'Yes. Browsing verified apps on The Stackhouse and getting your app into the registry is free. When an app is approved as live, StackApps also provides the proof-page backlink, embeddable StackApps Verified badge, and Site Readiness scan for free. Optional paid tiers may exist on individual products on their own domains.',
+        'Yes. Browsing The Stackhouse and getting your app into the registry is free. When an app is approved as live, StackApps also provides the proof-page backlink, embeddable SVG badge (StackApps Verified when live), twelve-point Site Readiness scan, and tier labels on the listing for free. Optional paid tiers may exist on individual products on their own domains.',
     },
     {
       question: 'How does the registry and moderation work?',
       answer:
-        'Approved apps appear in The Stackhouse vetted registry with search, categories, and tags. New submissions go through moderation: automated checks on URLs plus human review for quality and fit. Apps can be approved as building, but the backlink, StackApps Verified badge, and readiness scan activate only when the app is approved as live.',
+        'Approved apps appear in The Stackhouse vetted registry with search, categories, and tags. New submissions go through moderation: automated checks on URLs plus human review for quality and fit. Apps can be approved as building, but the backlink, embed badge, and full Site Readiness scan on the listing activate when the app is approved as live.',
     },
     {
       question: 'Is my data private?',
@@ -85,17 +105,17 @@ export default function FAQ() {
     {
       question: 'What do live-approved apps receive?',
       answer:
-        'A live-approved app receives a server-rendered proof page at stackapps.app/apps/[slug] with a crawler-visible backlink to the live app URL, an embeddable StackApps Verified badge at /api/badge/[appId].svg, and a 12-point Site Readiness scan.',
+        'A live-approved app receives a server-rendered proof page at stackapps.app/apps/[slug] with a crawler-visible backlink to the live app URL, an embeddable badge at /api/badge/[appId].svg (label StackApps Verified for live listings, plus x/12 score in the artwork), and a twelve-check Site Readiness section with Bronze / Silver / Gold tiers and a separate PWA badge.',
     },
     {
       question: 'Is there a review process?',
       answer:
-        'Yes. Submissions are reviewed for quality and relevance. Building apps may be approved as works in progress. Fully live apps can be approved as live, which activates the backlink, badge, and readiness scan.',
+        'Yes. Submissions are reviewed for quality and relevance. Building apps may be approved as works in progress. When approved as live, the backlink, embed badge, full twelve-check scan, and tier labels activate on the listing.',
     },
     {
       question: 'What is Approved as Building vs Approved as Live?',
       answer:
-        'Approved as Building means the app can appear as a work in progress, but it does not receive the backlink, StackApps Verified badge, or readiness scan yet. When the app is finished, the owner can request live review. Approved as Live unlocks those public proof surfaces.',
+        'Approved as Building means the app can appear as a work in progress, but it does not receive the backlink, live embed badge state, or full readiness scan on the listing yet. When the app is finished, the owner can request live review. Approved as Live unlocks those public proof surfaces.',
     },
     {
       question: "Can I submit an app that's still under development?",

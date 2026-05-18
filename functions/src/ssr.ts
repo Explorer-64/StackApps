@@ -12,7 +12,6 @@ type AppListing = {
   thumbnailUrl?: string;
   category?: string;
   scan_public?: boolean;
-  scan_score?: number;
   scan_reachable?: boolean;
   scan_llms?: boolean;
   scan_robots?: boolean;
@@ -71,7 +70,6 @@ function renderListing(app: AppListing, slug: string): string {
   const appUrl = app.url ?? app.appUrl ?? listingUrl;
   const image = app.image ?? app.imageUrl ?? app.thumbnailUrl ?? "https://stackapps.app/og-image.png";
   const category = app.category ?? "SoftwareApplication";
-  const showScan = app.scan_public === true;
   const verified =
     app.scan_reachable === true &&
     app.scan_robots === true &&
@@ -85,6 +83,7 @@ function renderListing(app: AppListing, slug: string): string {
   const pwaGreen = pwaAndroid && app.scan_pwa_ios === true && app.scan_pwa_sw === true;
   const pwaAmber = pwaAndroid && !pwaGreen;
   const blueprint = app.scan_blueprint === true;
+  const showScan = app.scan_public === true;
   const checks: Array<[label: string, value: boolean]> = [
     ["Site reachable", app.scan_reachable === true],
     ["llms.txt", app.scan_llms === true],

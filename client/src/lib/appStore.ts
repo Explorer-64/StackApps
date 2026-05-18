@@ -15,7 +15,7 @@ import {
   type Unsubscribe,
   type Firestore
 } from 'firebase/firestore';
-import { initializeFirebase, getFirestoreDb } from '@/lib/firebase';
+import { getFirestoreDb } from '@/lib/firebase';
 import type { App } from '@shared/schema';
 
 interface AppState {
@@ -77,6 +77,11 @@ const mapDocToApp = (doc: any): App => {
     scan_pwa_sw: data.scan_pwa_sw,
     scan_viewport: data.scan_viewport,
     scan_safety_verified: data.scan_safety_verified,
+    scan_lab_llms_full: data.scan_lab_llms_full,
+    scan_lab_openapi: data.scan_lab_openapi,
+    scan_lab_webmcp: data.scan_lab_webmcp,
+    scan_lab_ap2_ucp_hint: data.scan_lab_ap2_ucp_hint,
+    scan_lab_verifiable_intent_hint: data.scan_lab_verifiable_intent_hint,
     scan_score: data.scan_score,
     scan_timestamp: data.scan_timestamp ? convertTimestamp(data.scan_timestamp) : undefined,
     scan_public: data.scan_public,
@@ -87,8 +92,7 @@ let firestoreRef: Firestore | null = null;
 
 async function getDb(): Promise<Firestore> {
   if (!firestoreRef) {
-    await initializeFirebase();
-    firestoreRef = getFirestoreDb();
+    firestoreRef = await getFirestoreDb();
   }
   return firestoreRef;
 }
@@ -102,86 +106,113 @@ export const useAppStore = create<AppState>((set) => ({
 
   subscribeToPublicApps: () => {
     set({ isLoading: true });
-    
-    let unsubscribe: Unsubscribe = () => {};
-    
+
+    let active = true;
+    let firestoreUnsub: Unsubscribe = () => {};
+
     getDb().then((db) => {
+      if (!active) return;
       const appsCollection = collection(db, 'apps');
       const q = query(
-        appsCollection, 
+        appsCollection,
         where('moderationStatus', '==', 'approved'),
         limit(50)
       );
-      
-      unsubscribe = onSnapshot(q, 
+
+      firestoreUnsub = onSnapshot(
+        q,
         (snapshot) => {
+          if (!active) return;
           const publicApps = snapshot.docs.map(mapDocToApp);
           set({ publicApps, isLoading: false });
         },
         (error) => {
           console.error('Error fetching public apps:', error);
+          if (!active) return;
           set({ error: 'Failed to load public apps', isLoading: false });
         }
       );
     }).catch((error) => {
       console.error('Failed to initialize Firestore:', error);
+      if (!active) return;
       set({ error: 'Failed to connect to database', isLoading: false });
     });
-    
-    return () => unsubscribe();
+
+    return () => {
+      active = false;
+      firestoreUnsub();
+    };
   },
 
   subscribeToMyApps: (userId: string) => {
-    set({ isLoading: true });
-    
-    let unsubscribe: Unsubscribe = () => {};
-    
+    set({ isLoading: true, myApps: [] });
+
+    let active = true;
+    let firestoreUnsub: Unsubscribe = () => {};
+
     getDb().then((db) => {
+      if (!active) return;
       const appsCollection = collection(db, 'apps');
       const q = query(appsCollection, where('ownerId', '==', userId));
-      
-      unsubscribe = onSnapshot(q,
+
+      firestoreUnsub = onSnapshot(
+        q,
         (snapshot) => {
+          if (!active) return;
           const myApps = snapshot.docs.map(mapDocToApp);
           set({ myApps, isLoading: false });
         },
         (error) => {
           console.error('Error fetching my apps:', error);
+          if (!active) return;
           set({ error: 'Failed to load your apps', isLoading: false });
         }
       );
     }).catch((error) => {
       console.error('Failed to initialize Firestore:', error);
+      if (!active) return;
       set({ error: 'Failed to connect to database', isLoading: false });
     });
-    
-    return () => unsubscribe();
+
+    return () => {
+      active = false;
+      firestoreUnsub();
+    };
   },
 
   subscribeToAllApps: () => {
     set({ isLoading: true });
-    
-    let unsubscribe: Unsubscribe = () => {};
-    
+
+    let active = true;
+    let firestoreUnsub: Unsubscribe = () => {};
+
     getDb().then((db) => {
+      if (!active) return;
       const appsCollection = collection(db, 'apps');
-      
-      unsubscribe = onSnapshot(appsCollection,
+
+      firestoreUnsub = onSnapshot(
+        appsCollection,
         (snapshot) => {
+          if (!active) return;
           const adminApps = snapshot.docs.map(mapDocToApp);
           set({ adminApps, isLoading: false });
         },
         (error) => {
           console.error('Error fetching all apps:', error);
+          if (!active) return;
           set({ error: 'Failed to load all apps', isLoading: false });
         }
       );
     }).catch((error) => {
       console.error('Failed to initialize Firestore:', error);
+      if (!active) return;
       set({ error: 'Failed to connect to database', isLoading: false });
     });
-    
-    return () => unsubscribe();
+
+    return () => {
+      active = false;
+      firestoreUnsub();
+    };
   },
 
   addApp: async (appData) => {

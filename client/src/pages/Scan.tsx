@@ -6,6 +6,9 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { setPageSeo } from '@/utils/seo';
 import { READINESS_CHECKS } from '@/components/ReadinessScan';
+import { ReadinessCheckHint } from '@/components/ReadinessCheckHint';
+import { meetsBaseline } from '@/utils/scanBadges';
+import type { App } from '@shared/schema';
 
 type PublicScanResponse = {
   already_scanned: boolean;
@@ -19,6 +22,35 @@ type PublicScanResponse = {
   app_id?: string | null;
   error?: string;
 };
+
+const SCAN_SESSION_KEY = 'stackapps_public_scan_session';
+
+type ScanSessionPayload = { urlInput: string; response: PublicScanResponse };
+
+function readScanSession(): ScanSessionPayload | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(SCAN_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') return null;
+    const { urlInput, response } = parsed as ScanSessionPayload;
+    if (typeof urlInput !== 'string' || !response || typeof response !== 'object') return null;
+    if (typeof (response as PublicScanResponse).scan_score !== 'number') return null;
+    return { urlInput, response: response as PublicScanResponse };
+  } catch {
+    return null;
+  }
+}
+
+function writeScanSession(payload: ScanSessionPayload) {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(SCAN_SESSION_KEY, JSON.stringify(payload));
+  } catch {
+    /* quota or private mode */
+  }
+}
 
 function publicScanEndpoint(): string | null {
   const custom = import.meta.env.VITE_PUBLIC_SCAN_URL as string | undefined;
@@ -38,10 +70,15 @@ function ScanCheckGrid({ results }: { results: Record<string, boolean | number |
             key={check.field}
             className="bg-cyber-black border border-cyber-light rounded-lg px-4 py-3 flex items-center justify-between gap-3"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <ReadinessCheckHint
+                whatItIs={check.whatItIs}
+                whyWeCheck={check.whyWeCheck}
+                guideHref={check.guideHref}
+              />
               <span className="text-gray-300 font-medium">{check.label}</span>
               {check.pwa && (
-                <span className="bg-neon-blue/10 text-neon-blue border border-neon-blue/30 rounded-sm px-1.5 py-0.5 text-[10px] font-bold">
+                <span className="bg-neon-blue/10 text-neon-blue border border-neon-blue/30 rounded-sm px-1.5 py-0.5 text-[10px] font-bold shrink-0">
                   PWA
                 </span>
               )}
@@ -65,10 +102,18 @@ export default function Scan() {
 
   useEffect(() => {
     setPageSeo(
-      'Free AI readiness scan — StackApps',
-      'Run a free technical audit on your live URL. One scan per domain. Sign in to see every check and fixes.',
+      'Free AI & crawl readiness scan — StackApps',
+      'Open-source twelve-signal audit on your live URL. One free scan per domain. Sign in to see every check. Not a directory signup — technical compliance first.',
     );
   }, []);
+
+  useEffect(() => {
+    if (!user || response) return;
+    const stored = readScanSession();
+    if (!stored) return;
+    setUrlInput(stored.urlInput);
+    setResponse(stored.response);
+  }, [user, response]);
 
   const runScan = useCallback(async () => {
     setError(null);
@@ -97,6 +142,7 @@ export default function Scan() {
         return;
       }
       setResponse(data);
+      writeScanSession({ urlInput: url, response: data });
     } catch {
       setError('Could not reach the scan service. Try again.');
       setResponse(null);
@@ -107,6 +153,8 @@ export default function Scan() {
 
   const score = response?.scan_score ?? 0;
   const results = (response?.scan_results ?? {}) as Record<string, boolean | number | undefined>;
+  const resultsAsApp = results as unknown as App;
+  const clearedBaseline = meetsBaseline(resultsAsApp);
   const anonymousRepeat = Boolean(response?.already_scanned && !user);
   const showBlurredGrid = Boolean(response && !user && !response.already_scanned);
 
@@ -116,10 +164,27 @@ export default function Scan() {
 
       <main className="flex-grow w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-          How AI-ready is your app?
+          Can crawlers and agents actually use your site?
         </h1>
         <p className="mt-3 text-gray-400 text-lg">
-          Free scan. No sign-in required. One scan per domain.
+          Same twelve checks we ship in open source — free, no sign-in to start. One scan per domain.
+        </p>
+        <p className="mt-3 text-sm text-gray-500">
+          <Link href="/guides" className="text-neon-blue hover:underline font-medium">
+            Guides
+          </Link>
+          <span className="text-gray-600"> · </span>
+          <Link href="/guides/llms-txt" className="text-gray-400 hover:text-neon-blue transition-colors">
+            llms.txt
+          </Link>
+          <span className="text-gray-600"> · </span>
+          <Link href="/guides/faq" className="text-gray-400 hover:text-neon-blue transition-colors">
+            /faq
+          </Link>
+          <span className="text-gray-600"> · </span>
+          <Link href="/guides/cli-silver" className="text-gray-400 hover:text-neon-blue transition-colors">
+            CLI &amp; Silver
+          </Link>
         </p>
 
         <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -155,15 +220,44 @@ export default function Scan() {
             {user ? (
               <>
                 <ScanCheckGrid results={results} />
-                <p className="text-gray-300 text-sm leading-relaxed pt-2">
-                  Fixed the gaps? Get your results publicly verified on The Stackhouse — free.
-                </p>
-                <Link
-                  href="/hub"
-                  className="inline-flex text-neon-blue font-semibold hover:text-neon-green transition-colors"
-                >
-                  Get verified free →
-                </Link>
+                {clearedBaseline ? (
+                  <div className="mt-8 rounded-xl border border-neon-green/45 bg-neon-green/10 p-6 sm:p-8">
+                    <h3 className="text-lg font-bold text-white">You cleared the crawl bar</h3>
+                    <p className="mt-3 text-gray-300 text-sm leading-relaxed">
+                      That is the same baseline we use before an app can stay live on The Stackhouse. List free for human review: live approval unlocks a canonical proof page (your URL in the HTML for crawlers), an embeddable badge (StackApps Verified on the SVG when live), and Bronze/Silver/Gold tiers from all twelve checks on your listing.
+                    </p>
+                    <Link
+                      href="/hub"
+                      className="mt-5 inline-flex justify-center items-center px-7 py-3.5 bg-neon-green text-black font-extrabold rounded-sm uppercase tracking-wide shadow-[0_0_24px_rgba(57,255,20,0.25)] hover:bg-white transition-all"
+                      data-agent-id="scan-cta-submit-app"
+                    >
+                      Submit your app free
+                    </Link>
+                    <p className="mt-4 text-sm text-gray-300 leading-relaxed">
+                      Tighten anything in the checklist above, then run a fresh audit from{' '}
+                      <span className="text-orange-400 font-semibold">My Apps</span> with{' '}
+                      <span className="text-orange-400 font-semibold">Re-run scan</span> — available once every 24 hours per listed app while you ship.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-8 rounded-xl border border-neon-blue/35 bg-cyber-dark/90 p-6 sm:p-8">
+                    <h3 className="text-lg font-bold text-white">Still wiring things up?</h3>
+                    <p className="mt-3 text-gray-300 text-sm leading-relaxed">
+                      You do not need a perfect score to join. Submit as a <span className="text-neon-blue font-semibold">work in progress</span> — we often approve apps as &quot;building&quot; so you can live in the queue, finish the gaps above, then request live review when you are ready for the backlink, badge, and full audit on your listing.
+                    </p>
+                    <Link
+                      href="/hub"
+                      className="mt-5 inline-flex justify-center items-center px-7 py-3.5 border-2 border-neon-blue text-neon-blue font-bold rounded-sm uppercase tracking-wide hover:bg-neon-blue/10 hover:text-white transition-all"
+                      data-agent-id="scan-cta-building"
+                    >
+                      Submit as work in progress
+                    </Link>
+                    <p className="mt-4 text-sm text-gray-300 leading-relaxed">
+                      After you list, ship fixes and use <span className="text-orange-400 font-semibold">Re-run scan</span> on{' '}
+                      <span className="text-orange-400 font-semibold">My Apps</span> to refresh this audit — once every 24 hours per app.
+                    </p>
+                  </div>
+                )}
               </>
             ) : anonymousRepeat ? (
               <div className="rounded-xl border border-cyber-light bg-cyber-dark/80 p-6 text-gray-300">
@@ -174,7 +268,7 @@ export default function Scan() {
                   Sign in free to see what&apos;s failing — no card, no commitment.
                 </p>
                 <Link
-                  href="/login"
+                  href="/login?next=%2Fscan"
                   className="mt-4 inline-flex text-neon-blue font-semibold hover:text-neon-green transition-colors"
                 >
                   Sign in to see results →
@@ -201,7 +295,7 @@ export default function Scan() {
                     Sign in free to see exactly what&apos;s failing and how to fix it — no card, no commitment.
                   </p>
                   <Link
-                    href="/login"
+                    href="/login?next=%2Fscan"
                     className="inline-flex text-neon-blue font-semibold hover:text-neon-green transition-colors"
                   >
                     Sign in to see results →

@@ -23,11 +23,12 @@ export function ReviewSection({ appId, user, onReviewSubmit }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    initializeFirebase().then(() => {
-      setDb(getFirestoreDb());
-    }).catch(err => {
-      console.error('Failed to init Firestore:', err);
-    });
+    initializeFirebase()
+      .then(() => getFirestoreDb())
+      .then(setDb)
+      .catch((err) => {
+        console.error('Failed to init Firestore:', err);
+      });
   }, []);
 
   useEffect(() => {

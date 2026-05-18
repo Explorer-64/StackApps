@@ -1,8 +1,11 @@
+import asyncio
 import os
 import json
 import logging
-from datetime import datetime
-from typing import Optional
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Optional
 
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -193,13 +196,116 @@ async def get_bookkeeping_categories(authorization: Optional[str] = Header(None)
         logging.error(f"Error fetching categories: {e}")
         return {"categories": DEFAULT_EXPENSE_CATEGORIES}
 
+class McpBlueprintTestRequest(BaseModel):
+    model: str = "claude"
+
+
+class McpBlueprintResultsSave(BaseModel):
+    model: str
+    result: dict[str, Any]
+
+
+_VALID_MODELS = {"claude", "gemini", "grok", "gpt4o"}
+
+
+@router.post("/mcp-blueprint-results")
+async def save_mcp_blueprint_results(
+    body: McpBlueprintResultsSave,
+    authorization: Optional[str] = Header(None),
+):
+    user = verify_firebase_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    db = firestore.client()
+    doc_ref = db.collection("mcp_blueprint_test_runs").document()
+    saved_at = datetime.now(timezone.utc).isoformat()
+    doc_ref.set({
+        "model": body.model.strip(),
+        "result": body.result,
+        "savedAt": saved_at,
+        "savedBy": user["uid"],
+    })
+
+    return {"id": doc_ref.id}
+
+
+@router.get("/mcp-blueprint-results")
+async def list_mcp_blueprint_results():
+    db = firestore.client()
+    q = (
+        db.collection("mcp_blueprint_test_runs")
+        .order_by("savedAt", direction=firestore.Query.DESCENDING)
+    )
+
+    rows: list[dict[str, Any]] = []
+    for doc in q.stream():
+        data = doc.to_dict() or {}
+        row = dict(data)
+        row["id"] = doc.id
+        rows.append(row)
+
+    return rows
+
+
+@router.get("/mcp-blueprint-results/{run_id}")
+async def get_mcp_blueprint_results(run_id: str):
+    db = firestore.client()
+    doc = db.collection("mcp_blueprint_test_runs").document(run_id).get()
+
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    data = doc.to_dict() or {}
+    return {**data, "id": doc.id}
+
+@router.post("/mcp-blueprint-test")
+async def run_mcp_blueprint_test_endpoint(
+    request: McpBlueprintTestRequest,
+    authorization: Optional[str] = Header(None),
+) -> Any:
+    user = verify_firebase_token(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    model = request.model.strip().lower()
+    if model not in _VALID_MODELS:
+        raise HTTPException(status_code=400, detail=f"Model must be one of: {', '.join(_VALID_MODELS)}")
+
+    from .mcp_test import run_mcp_blueprint_test
+
+    FIXED_TASK = (
+        "Generate a complete set of PWA icons for a recipe app — all required sizes, maskable "
+        "variants, iOS icons, Android icons, and manifest.json, packaged and ready to deploy."
+    )
+
+    try:
+        result = await asyncio.wait_for(
+            run_mcp_blueprint_test(task=FIXED_TASK, model=model),
+            timeout=600.0,
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="Test timed out after 600 seconds.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+    return result
+
+
 from .ratings import ratings_router
 from .moderation import moderation_router
 from .uploads import uploads_router
 from .stacklaunch import router as stacklaunch_router
+from .mcp_registry import mcp_registry_router, seed_mcp_registry
+from .mcp_stubs import mcp_stubs_bp_router, mcp_stubs_router
 
 app.include_router(router)
 app.include_router(ratings_router)
 app.include_router(moderation_router)
 app.include_router(uploads_router)
 app.include_router(stacklaunch_router)
+app.include_router(mcp_registry_router)
+app.include_router(mcp_stubs_router)
+app.include_router(mcp_stubs_bp_router)
+
+seed_mcp_registry()

@@ -1,6 +1,6 @@
 # StackApps
 
-StackApps is a discovery and proof layer for indie, browser-ready PWA SaaS: a curated public directory (“The Stackhouse”) where builders can list apps and, when live-approved, receive crawler-visible trust surfaces like a server-rendered listing backlink, an embeddable “StackApps Verified” badge, and a site readiness scan for search + AI crawler signals. StackApps is the channel and credibility layer — it is not the business tool itself.
+StackApps leads with a **free, open-source** AI/crawl readiness audit (twelve signals, GitHub-visible). **The Stackhouse** is a human-moderated public registry for browser-ready indie apps: when live-approved, listings get canonical HTML proof, an embeddable badge, scan results, and **Bronze / Silver / Gold** tiers (plus a PWA badge) — credibility and citations, not pay-to-list SEO noise. StackApps is discoverability infrastructure; it is not the business tool itself.
 
 For the long-term strategy and product framing, see `VISION.md`.
 

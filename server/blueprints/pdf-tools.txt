@@ -1,0 +1,78 @@
+# BLUEPRINT: PDF Workshop
+# Version: 2.5.0
+# URL: https://stub.stackapps.app/pdf-tools
+# Updated: 2026-05-15
+
+## IDENTITY
+name: PDF Workshop
+description: Generate PDFs from HTML, merge ordered PDFs, extract plain text by page range, and split on bookmark entries.
+category: productivity
+contact: registry@stackapps.app
+
+## AUTH
+provider: api-key
+method: api-key
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## CAPABILITY: html-to-pdf
+description: Render an HTML string to a PDF file with configurable page size and margins.
+input:
+  - name: html
+    type: string
+    required: true
+    description: Full HTML document string to render as PDF.
+  - name: page_size
+    type: string
+    required: false
+    description: Page size — "A4", "letter", or "legal". Default "A4".
+  - name: margin_mm
+    type: number
+    required: false
+    description: Uniform margin size in millimeters. Default 15.
+output:
+  - type: file
+    description: PDF file.
+auth-required: true
+scope: file-download
+
+### MCP
+tool: html_to_pdf
+
+## CAPABILITY: merge-pdfs
+description: Merge an ordered list of PDF URLs into a single PDF, preserving outlines when present.
+input:
+  - name: pdf_urls
+    type: string
+    required: true
+    description: JSON array of publicly accessible PDF URLs in the desired merge order.
+output:
+  - type: file
+    description: Merged PDF file.
+auth-required: true
+scope: file-download
+
+### MCP
+tool: merge_pdfs
+
+## CAPABILITY: extract-text
+description: Extract plain text from a PDF by page range with heading-level hints.
+input:
+  - name: pdf_url
+    type: string
+    required: true
+    description: Publicly accessible URL of the PDF to extract text from.
+  - name: pages
+    type: string
+    required: false
+    description: Page range, e.g. "1-5" or "3". Default extracts all pages.
+output:
+  - type: json
+    description: Extracted text indexed by page number, with heading candidates flagged.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: extract_text

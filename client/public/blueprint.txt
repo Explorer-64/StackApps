@@ -1,29 +1,47 @@
 # BLUEPRINT: StackApps
-# Version: 2.0.0
+# Version: 2.1.0
 # URL: https://stackapps.app
-# Updated: 2026-04-28
+# Updated: 2026-05-12
 
 ## IDENTITY
 name: StackApps
-tagline: Get your app verified. Backlink, StackApps Verified badge, and site readiness scan — free.
-description: StackApps is a vetted public registry and verification layer for AI-ready,
-  browser-ready indie apps (The Stackhouse). Any builder can get their app verified for free.
-  When approved as live, three things happen automatically: (1) a permanent server-rendered
-  proof page is created at stackapps.app/apps/[slug] with a dofollow backlink to the live
-  app URL — present in raw HTML, visible to every crawler on first load; (2) an embeddable
-  StackApps badge is available as an SVG at stackapps.app/api/badge/[appId].svg and displays
-  StackApps Verified when verification checks pass; (3) a Site Readiness technical audit
-  checks 10 signals (site reachability, llms.txt, robots.txt, sitemap.xml, FAQ presence,
-  Android PWA, iOS PWA, service worker, viewport meta, Blueprint Protocol) and stores
-  results publicly on the proof page. Apps that pass all 10 checks are directed to
-  StackLaunch (stacklaunch.app) for promotion. Apps with failing checks are directed to
-  StackLaunch AIEO/GEO for a prioritized fix list. StackApps is the free value layer.
-  StackLaunch is the paid promotion and audit engine it feeds.
+tagline: Open-source AI & crawl readiness audit — optional curated proof on The Stackhouse.
+description: StackApps leads with a free, open-source twelve-signal technical audit
+  (Lighthouse for the agent era). The Stackhouse is a human-moderated public registry for
+  browser-ready indie apps — proof and citations, not a pay-to-list directory or link scheme.
+  When approved as live, three surfaces activate: (1) server-rendered proof page at
+  stackapps.app/apps/[slug] with the live app URL in raw HTML for crawlers; (2) embeddable
+  SVG at stackapps.app/api/badge/[appId].svg — "StackApps Verified ✓" when moderation-approved
+  AND live (registry status, not identical to top readiness tier); (3) Site Readiness on the
+  listing from twelve checks (reachable, llms.txt, robots, sitemap, FAQ, blueprint, MCP,
+  CLI, Android PWA, iOS PWA, service worker, viewport) with Bronze/Silver/Gold tiers and
+  separate PWA badge. Strong audits point to StackLaunch promotion; gaps to StackLaunch
+  AIEO/GEO. StackLaunch is the paid companion on stacklaunch.app.
 category: developer-tools / ai-ready-registry
 url: https://stackapps.app
 contact: support@stackapps.app
-public-routes: /, /dashboard, /apps/*, /for-builders, /faq, /privacy, /terms
+public-routes: /, /dashboard, /apps/*, /scan, /for-builders, /faq, /guides, /guides/*, /privacy, /terms
 auth-required-routes: /hub, /settings, /workstation, /admin
+
+## AUTOMATION — CLI & MCP (public scan only)
+description: >-
+  First-party Node packages call the same HTTPS endpoint as stackapps.app/scan.
+  No Firebase auth on these paths; rate limits and one-scan-per-domain rules are server-side.
+cli:
+  package: stackapps-cli
+  repo_path: packages/stackapps-cli
+  examples:
+    - npm install -g stackapps-cli
+    - stackapps scan https://your.app
+    - npx stackapps-cli scan https://your.app
+mcp:
+  package: stackapps-mcp
+  repo_path: packages/stackapps-mcp
+  transport: stdio
+  start_command: npx stackapps-mcp
+  tools:
+    - name: readiness_scan
+      args: '{ "url": "https://..." }'
 
 ## AUTH
 provider: firebase
@@ -127,9 +145,10 @@ steps:
   6. VERIFY selector_exists [data-agent-id="readiness-scan-section"]
 
 ## CAPABILITY: view-readiness-scan
-description: Read the Site Readiness scan results for a live-approved listing.
-  Results include 10 boolean checks, a score out of 10, the last-checked
-  timestamp, and a CTA to StackLaunch based on pass/fail state.
+description: Read the Site Readiness scan for a listing with scan data (typically
+  live-approved). Twelve boolean checks, score out of 12, Bronze/Silver/Gold tier
+  badges (data-agent-id scan-badge-tier-bronze|silver|gold), PWA badge, optional
+  Blueprint chip, last-checked timestamp, per-check help (? popovers).
 input:
   - name: app-id
     type: string
@@ -144,9 +163,9 @@ steps:
   3. VERIFY selector_exists [data-agent-id="readiness-scan-section"]
 
 ## CAPABILITY: embed-badge
-description: Retrieve the embeddable SVG badge code for a listing. Only
-  visible to the app owner. The badge reflects StackApps verification status,
-  readiness score, and links back to the listing page.
+description: Retrieve the embeddable SVG badge code for a listing. Owner-only in UI.
+  The SVG text "StackApps Verified ✓" means live + approved; it also shows score x/12.
+  Readiness tiers (Bronze/Silver/Gold) appear on the listing page, not inside the SVG label.
 input:
   - name: app-id
     type: string
@@ -187,7 +206,7 @@ steps:
 ## CAPABILITY: submit-app-listing
 description: From the signed-in hub, submit a new listing. When approved as live,
   the app automatically receives: a dofollow backlink at stackapps.app/apps/[slug],
-  an embeddable StackApps Verified badge, and a 10-point Site Readiness scan.
+  an embeddable StackApps Verified badge (when live), and a 12-point Site Readiness scan.
 input:
   - name: app-name
     type: string
@@ -235,8 +254,8 @@ Note: When <<thumbnail-file>> is provided, run
 
 ## CAPABILITY: request-live-review
 description: For an approved building-stage app, ask StackApps moderators to review
-  it as a fully live app. If approved as live, the backlink, StackApps Verified
-  badge state, and Site Readiness scan become active.
+  it as a fully live app. If approved as live, the backlink, live embed badge,
+  and Site Readiness scan (twelve checks, tiers) become active.
 input:
   - name: app-id
     type: string
@@ -266,6 +285,9 @@ steps:
 #   data-agent-id="directory-grid"             grid wrapper around AppCard list
 # AppCard.tsx
 #   data-agent-id="app-card-<app-id>"          outer Link per card (dynamic)
+# Scan.tsx (public free scan)
+#   data-agent-id="public-scan-input"          URL input
+#   data-agent-id="public-scan-submit"         Run scan button
 # Login.tsx
 #   data-agent-id="login-heading"              h1
 #   data-agent-id="login-email"                email Input

@@ -1,0 +1,82 @@
+# BLUEPRINT: Analytics Query Layer
+# Version: 2.5.0
+# URL: https://stub.stackapps.app/analytics-tools
+# Updated: 2026-05-15
+
+## IDENTITY
+name: Analytics Query Layer
+description: Run canned queries over product event data — DAU/WAU time series, funnel conversion rates, cohort comparisons, and A/B experiment readouts.
+category: marketing
+contact: registry@stackapps.app
+
+## AUTH
+provider: api-key
+method: api-key
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## CAPABILITY: daily-active-series
+description: Return a DAU or WAU time series for a specified date window.
+input:
+  - name: metric
+    type: string
+    required: false
+    description: Metric granularity — "dau" or "wau". Default "dau".
+  - name: start_date
+    type: string
+    required: true
+    description: Start date in ISO format, e.g. "2026-05-01".
+  - name: end_date
+    type: string
+    required: true
+    description: End date in ISO format, e.g. "2026-05-14".
+output:
+  - type: json
+    description: Array of date and value pairs covering the requested window.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: daily_active_series
+
+## CAPABILITY: funnel-snapshot
+description: Compute step-by-step conversion for a named funnel with drop-off percentages at each stage.
+input:
+  - name: funnel_id
+    type: string
+    required: true
+    description: Funnel identifier configured in the analytics workspace.
+  - name: date_range
+    type: string
+    required: false
+    description: ISO date range, e.g. "2026-05-01/2026-05-14". Default is last 30 days.
+output:
+  - type: json
+    description: Funnel steps with user counts, conversion rates, and drop-off percentages.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: funnel_snapshot
+
+## CAPABILITY: experiment-readout
+description: Return lift and confidence interval for an A/B experiment.
+input:
+  - name: experiment_id
+    type: string
+    required: true
+    description: Experiment identifier.
+  - name: metric
+    type: string
+    required: false
+    description: Primary metric to report on. Default uses the experiment's configured primary metric.
+output:
+  - type: json
+    description: Control vs treatment lift, p-value, confidence interval, and sample sizes.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: experiment_readout

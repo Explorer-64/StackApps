@@ -13,8 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { getFirestoreDb, initializeFirebase } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function SiteFooter() {
   const [open, setOpen] = useState(false);
@@ -36,9 +34,11 @@ export function SiteFooter() {
 
     setIsSubmitting(true);
     try {
+      const [{ initializeFirebase, getFirestoreDb }, { collection, addDoc, serverTimestamp }] =
+        await Promise.all([import('@/lib/firebase'), import('firebase/firestore')]);
       await initializeFirebase();
-      const db = getFirestoreDb();
-      
+      const db = await getFirestoreDb();
+
       await addDoc(collection(db, 'feedback'), {
         message: message.trim(),
         userId: user?.uid || null,
@@ -83,6 +83,9 @@ export function SiteFooter() {
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
             <Link href="/faq" className="text-gray-400 hover:text-neon-blue transition-colors" data-testid="link-faq">
               FAQ
+            </Link>
+            <Link href="/guides" className="text-gray-400 hover:text-neon-blue transition-colors" data-testid="link-guides-footer">
+              Guides
             </Link>
             <Link href="/privacy" className="text-gray-400 hover:text-neon-blue transition-colors" data-testid="link-privacy">
               Privacy

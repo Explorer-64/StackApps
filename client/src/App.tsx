@@ -12,7 +12,8 @@ import {
 } from "@/pages/LegacyAppRoutes";
 import Logout from "@/pages/Logout";
 import Home from "@/pages/Home";
-import Hub from "@/pages/Hub";
+
+const Hub = lazy(() => import("@/pages/Hub"));
 
 const NotFound = lazy(() => import("@/pages/not-found"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
@@ -28,6 +29,11 @@ const Workstation = lazy(() => import("@/pages/Workstation"));
 const ForBuilders = lazy(() => import("@/pages/ForBuilders"));
 const VerifyApp = lazy(() => import("@/pages/VerifyApp"));
 const Scan = lazy(() => import("@/pages/Scan"));
+const McpBlueprintTest = lazy(() => import("@/pages/McpBlueprintTest"));
+const McpBlueprintResultsIndex = lazy(() => import("@/pages/McpBlueprintResultsIndex"));
+const McpBlueprintResultPage = lazy(() => import("@/pages/McpBlueprintResultPage"));
+const GuidesIndex = lazy(() => import("@/pages/guides/GuidesIndex"));
+const GuideArticle = lazy(() => import("@/pages/guides/GuideArticle"));
 
 function Router() {
   return (
@@ -39,6 +45,11 @@ function Router() {
       <Route path="/" component={Home}/>
       <Route path="/for-builders" component={ForBuilders}/>
       <Route path="/scan" component={Scan}/>
+      <Route path="/mcp-test" component={McpBlueprintTest}/>
+      <Route path="/mcp-blueprint-results/:id" component={McpBlueprintResultPage}/>
+      <Route path="/mcp-blueprint-results" component={McpBlueprintResultsIndex}/>
+      <Route path="/guides/:slug" component={GuideArticle}/>
+      <Route path="/guides" component={GuidesIndex}/>
       <Route path="/hub" component={Hub}/>
       <Route path="/dashboard" component={Dashboard}/>
       <Route path="/login" component={Login}/>

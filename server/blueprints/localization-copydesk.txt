@@ -1,0 +1,82 @@
+# BLUEPRINT: Localization Copydesk
+# Version: 2.5.0
+# URL: https://stub.stackapps.app/localization-copydesk
+# Updated: 2026-05-15
+
+## IDENTITY
+name: Localization Copydesk
+description: Manage translation keys, enforce glossary terminology, validate ICU message patterns, and export XLIFF chunks for multilingual app localization workflows.
+category: productivity
+contact: registry@stackapps.app
+
+## AUTH
+provider: api-key
+method: api-key
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## CAPABILITY: icu-validate
+description: Validate ICU message format strings for correct syntax, plural branches, and select cases across target locales.
+input:
+  - name: messages
+    type: string
+    required: true
+    description: JSON object of message key to ICU string pairs to validate.
+  - name: locales
+    type: string
+    required: false
+    description: Comma-separated locale codes to validate plural rules against, e.g. "en,ar,pl". Default "en".
+output:
+  - type: json
+    description: Validation results per message key with error descriptions and affected locales.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: icu_validate
+
+## CAPABILITY: glossary-apply
+description: Flag translated strings that deviate from glossary-approved terminology for a target locale.
+input:
+  - name: strings
+    type: string
+    required: true
+    description: JSON array of translated strings to check against the active workspace glossary.
+  - name: locale
+    type: string
+    required: true
+    description: Target locale code, e.g. "fr", "de", "ja".
+output:
+  - type: json
+    description: Array of flagged strings with the offending term and the approved glossary alternative.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: glossary_apply
+
+## CAPABILITY: export-xliff-chunk
+description: Export a namespace of translation keys as an XLIFF 1.2 file for vendor handoff.
+input:
+  - name: target_locale
+    type: string
+    required: true
+    description: Target locale code for the XLIFF file, e.g. "fr" or "ja".
+  - name: key_prefix
+    type: string
+    required: false
+    description: Key namespace prefix to export, e.g. "onboarding". Default exports all keys.
+  - name: include_context
+    type: boolean
+    required: false
+    description: Include source context notes in the XLIFF. Default true.
+output:
+  - type: file
+    description: XLIFF 1.2 file ready for vendor translation tools.
+auth-required: true
+scope: file-download
+
+### MCP
+tool: export_xliff_chunk

@@ -1,0 +1,78 @@
+# BLUEPRINT: Filebox Cloud MCP
+# Version: 2.5.0
+# URL: https://stub.stackapps.app/filebox-storage
+# Updated: 2026-05-15
+
+## IDENTITY
+name: Filebox Cloud MCP
+description: Bucket-oriented object storage with presigned upload URLs, prefix listing, object metadata, and public sharing links.
+category: developer-tools
+contact: registry@stackapps.app
+
+## AUTH
+provider: api-key
+method: api-key
+
+## ACCESS
+preferred: mcp
+last-resort: api
+
+## CAPABILITY: presign-upload
+description: Generate a presigned upload URL and required headers for direct client-to-storage upload.
+input:
+  - name: path
+    type: string
+    required: true
+    description: Object path including filename, e.g. "uploads/report.pdf".
+  - name: content_type
+    type: string
+    required: false
+    description: MIME type of the file being uploaded. Default "application/octet-stream".
+  - name: expires_seconds
+    type: number
+    required: false
+    description: URL expiry in seconds. Default 3600.
+output:
+  - type: json
+    description: Presigned URL and required headers map for a PUT upload request.
+auth-required: true
+scope: form-submit
+
+### MCP
+tool: presign_upload
+
+## CAPABILITY: list-prefix
+description: List objects stored under a path prefix, non-recursively.
+input:
+  - name: prefix
+    type: string
+    required: true
+    description: Path prefix to list, e.g. "uploads/".
+  - name: limit
+    type: number
+    required: false
+    description: Maximum objects to return. Default 100, max 1000.
+output:
+  - type: json
+    description: Array of object metadata with path, size_bytes, content_type, and last_modified.
+auth-required: true
+scope: read-only
+
+### MCP
+tool: list_prefix
+
+## CAPABILITY: share-public-link
+description: Generate a permanent public URL for an existing object.
+input:
+  - name: path
+    type: string
+    required: true
+    description: Object path to share, e.g. "uploads/report.pdf".
+output:
+  - type: json
+    description: Public URL for the object and its content_type.
+auth-required: true
+scope: account-modify
+
+### MCP
+tool: share_public_link

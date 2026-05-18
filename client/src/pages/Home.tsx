@@ -1,7 +1,5 @@
-import { useAppStore } from '@/lib/appStore';
-import { AppCard } from '@/components/AppCard';
 import { Link, useLocation } from 'wouter';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { setPageSeo } from '@/utils/seo';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { NavBar } from '@/components/NavBar';
@@ -9,41 +7,64 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { BadgeCheck, Bot, Link2, Radar, Rocket, SearchCheck, ShieldCheck, Sparkles } from 'lucide-react';
 
+const HomeRegistryTeaser = lazy(() => import('@/components/HomeRegistryTeaser'));
+
+function HomeRegistryTeaserSkeleton() {
+  return (
+    <div aria-busy="true">
+      <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="flex-1 space-y-3">
+          <div className="flex items-center gap-3">
+            <span className="h-8 w-1 rounded-sm bg-cyber-light/30" aria-hidden />
+            <div className="h-4 w-40 rounded bg-cyber-light/20 animate-pulse" />
+          </div>
+          <div className="h-8 w-64 max-w-full rounded bg-cyber-light/15 animate-pulse" />
+          <div className="h-4 w-full max-w-xl rounded bg-cyber-light/10 animate-pulse" />
+        </div>
+        <div className="rounded-2xl border border-cyber-light bg-cyber-dark px-4 py-3 min-w-[200px]">
+          <div className="h-5 w-48 rounded bg-cyber-light/15 animate-pulse" />
+        </div>
+      </div>
+      <div className="flex flex-col items-center py-16 gap-3 min-h-[200px]">
+        <div className="h-10 w-10 rounded-full border-2 border-cyber-light border-t-neon-blue animate-spin" />
+        <p className="text-sm text-gray-500">Loading featured picks…</p>
+      </div>
+    </div>
+  );
+}
+
 const builderPerks = [
   {
     icon: Link2,
-    title: 'Crawler-visible backlink',
+    title: 'Canonical proof page (when live)',
     description:
-      'Live-approved apps get a server-rendered page with a raw HTML link to the app URL.',
+      'Live-approved listings get a server-rendered page with your real app URL in the HTML — for evaluators and crawlers, not a paid placement game.',
   },
   {
     icon: ShieldCheck,
-    title: 'StackApps Verified badge',
+    title: 'Embed badge when live',
     description:
-      'Owners can display a StackApps badge that links back to the public proof page.',
+      'Live-approved apps get an SVG that says StackApps Verified and links to your proof page — separate from Bronze/Silver/Gold tiers on the listing.',
   },
   {
     icon: SearchCheck,
     title: '12-point readiness scan',
     description:
-      'Technical audit of search, AI crawler, PWA, and Blueprint Protocol signals before promotion.',
+      'Twelve automated checks (crawl health, MCP, CLI, FAQ, blueprint, PWA, viewport). Tiers summarize how far you got; PWA has its own badge.',
   },
 ] as const;
 
 const proofPoints = [
-  'Free technical audit',
-  'Human vetted',
-  'No pay-to-rank',
-  'StackLaunch next step',
+  'Open methodology (GitHub)',
+  'Free 12-signal audit',
+  'Curated proof — no pay-to-rank',
+  'StackLaunch when you want fixes',
 ] as const;
 
 export default function Home() {
   const { user, loading } = useCurrentUser();
-  const { publicApps, isLoading, error, subscribeToPublicApps } = useAppStore();
   const [, setLocation] = useLocation();
-
-  const featuredApps = publicApps.filter(app => app.isFeatured);
-  const liveAppsCount = publicApps.filter(app => app.status === 'live').length;
+  const [registryReady, setRegistryReady] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -54,15 +75,30 @@ export default function Home() {
   useEffect(() => {
     if (loading || user) return;
     setPageSeo(
-      'StackApps — Vetted registry & verification layer for AI-ready apps',
-      'Free technical audit for indie builders: see what search and AI crawlers can find, read, and use before you spend on promotion. Open source scan logic.',
+      'StackApps — Open-source AI & crawl readiness audit (Lighthouse for the agent era)',
+      'Free twelve-check technical audit: what search and AI systems can discover and operate. Every check is on GitHub. The Stackhouse is human-reviewed public proof when you list — not a generic AI directory.',
     );
   }, [loading, user]);
 
   useEffect(() => {
-    const unsubscribe = subscribeToPublicApps();
-    return () => unsubscribe();
-  }, [subscribeToPublicApps]);
+    if (loading || user) return;
+    let cancelled = false;
+    const run = () => {
+      if (!cancelled) setRegistryReady(true);
+    };
+    if (typeof requestIdleCallback !== 'undefined') {
+      const id = requestIdleCallback(run, { timeout: 1800 });
+      return () => {
+        cancelled = true;
+        cancelIdleCallback(id);
+      };
+    }
+    const t = window.setTimeout(run, 32);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [loading, user]);
 
   if (loading || user) {
     return <LoadingScreen />;
@@ -82,23 +118,28 @@ export default function Home() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-neon-green/30 bg-neon-green/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.22em] text-neon-green">
                 <Sparkles className="h-3.5 w-3.5" aria-hidden />
-                Free verification layer
+                Lighthouse for the agent era
               </div>
 
-              <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.04] [text-shadow:0_0_48px_rgba(0,243,255,0.22)]">
-                Where apps prove they&apos;re actually built for the AI era.
+              <h1 className="mt-6 max-w-[14rem] sm:max-w-xl md:max-w-2xl text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.06] [text-shadow:0_0_48px_rgba(0,243,255,0.22)]">
+                <span className="block">We build to be found and cited.</span>
+                <span className="block mt-1 sm:mt-1.5">You can too.</span>
               </h1>
-              <p className="mt-6 text-lg md:text-xl text-gray-300 max-w-2xl leading-relaxed">
-                The free StackApps technical audit shows what search and AI crawlers can find, read, and operate — proof you cleared the bar, not just a claim.
+              <p className="mt-5 md:mt-6 text-lg md:text-xl text-gray-400 max-w-xl leading-snug">
+                Start with a free scan, then publish the signals agents actually read.
+              </p>
+              <p className="mt-3 text-sm text-gray-500 max-w-xl leading-relaxed">
+                &quot;Found and cited&quot; means legible, stable facts — not traffic guarantees.
               </p>
 
               <div className="mt-9 flex flex-col sm:flex-row gap-3">
                 <Link
-                  href="/login"
+                  href="/scan"
                   className="inline-flex justify-center items-center px-7 py-3.5 bg-neon-green text-black font-extrabold rounded-sm uppercase tracking-wide shadow-[0_0_28px_rgba(57,255,20,0.35)] hover:shadow-[0_0_36px_rgba(57,255,20,0.5)] hover:bg-white transition-all"
-                  data-testid="button-submit-app"
+                  data-testid="button-free-scan-hero"
+                  data-agent-id="home-hero-scan"
                 >
-                  List Your App Free
+                  Scan your app for free
                 </Link>
                 <Link
                   href="/dashboard"
@@ -124,8 +165,8 @@ export default function Home() {
               <div className="relative rounded-3xl border border-cyber-light bg-cyber-dark/90 p-5 md:p-6 shadow-2xl backdrop-blur">
                 <div className="flex items-center justify-between border-b border-cyber-light pb-4">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-gray-500">Live-approved package</p>
-                    <h2 className="mt-1 text-xl font-bold text-white">Built for builders who ship</h2>
+                    <p className="text-xs uppercase tracking-[0.24em] text-gray-500">When your listing is live</p>
+                    <h2 className="mt-1 text-xl font-bold text-white">Proof surfaces on top of the audit</h2>
                   </div>
                   <div className="rounded-full border border-neon-blue/40 bg-neon-blue/10 p-3 text-neon-blue">
                     <Radar className="h-6 w-6" aria-hidden />
@@ -154,7 +195,7 @@ export default function Home() {
                     AI and search readiness
                   </div>
                   <p className="mt-2 text-sm text-gray-300">
-                    The scan is the story; your Stackhouse page is the proof. Failed checks point to StackLaunch AIEO/GEO. A clean audit points to Market Viability before you spend on promotion.
+                    Lead with the audit and open methodology; treat the registry as credibility, not the headline. Failed checks point to StackLaunch AIEO/GEO. A clean run points to market viability before you spend on promotion.
                   </p>
                 </div>
               </div>
@@ -169,17 +210,18 @@ export default function Home() {
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-neon-blue">Why this is different</p>
               <h2 className="mt-3 text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                Not another launch list. A verification layer.
+                Compliance, not another AI link directory.
               </h2>
               <p className="mt-4 text-gray-400 leading-relaxed">
-                People do not need another noisy leaderboard. Builders need visible trust, crawler-friendly pages, and a practical path from verified to ready to promote.
+                The market is full of low-signal directories and opaque GEO widgets. StackApps leads with a <span className="text-gray-200">public, forkable checklist</span> so founders and agencies can defend the score.
+                The Stackhouse is a curated layer for apps that clear moderation — proof, not pay-to-list noise.
               </p>
             </div>
 
             <div className="grid sm:grid-cols-3 gap-4">
               {[
                 ['01', 'Start free', 'Get your browser-ready app in the queue for human review.'],
-                ['02', 'Go live', 'Live approval activates the backlink, badge, and technical audit.'],
+                ['02', 'Go live', 'Live approval turns on public proof: canonical page, embed badge, and scan on your listing.'],
                 ['03', 'Ask before you invest more', 'Once you clear the bar on the audit, find out if there\'s actually a market for it — before you spend another hour building.'],
               ].map(([n, title, body]) => (
                 <div key={n} className="rounded-2xl border border-cyber-light bg-cyber-black/60 p-5 shadow-[0_0_0_1px_rgba(0,243,255,0.05)]">
@@ -194,57 +236,12 @@ export default function Home() {
       </section>
 
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-16">
-        <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div>
-            <div className="mb-3 flex items-center gap-3">
-              <span className="h-8 w-1 rounded-sm bg-neon-purple shadow-[0_0_12px_rgba(168,85,247,0.5)]" aria-hidden />
-              <p className="text-sm font-bold uppercase tracking-[0.2em] text-neon-purple">The Stackhouse</p>
-            </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white">The public proof layer</h2>
-            <p className="mt-2 text-gray-400">Browse verified apps on the vetted registry, see what is live, and follow the proof back to each maker.</p>
-          </div>
-          <div className="rounded-2xl border border-cyber-light bg-cyber-dark px-4 py-3 text-sm text-gray-300">
-            <span className="font-bold text-neon-green">{liveAppsCount}</span> live-approved apps
-            <span className="mx-2 text-cyber-light">/</span>
-            <span className="font-bold text-neon-blue">{publicApps.length}</span> approved in registry
-          </div>
-        </div>
-
-        {isLoading && (
-          <div className="flex flex-col items-center py-16 gap-3">
-            <div className="h-10 w-10 rounded-full border-2 border-cyber-light border-t-neon-blue animate-spin" />
-            <p className="text-sm text-gray-500">Loading featured picks…</p>
-          </div>
-        )}
-
-        {!isLoading && error && (
-          <p className="text-center text-sm text-gray-500 py-12">Featured apps unavailable right now.</p>
-        )}
-
-        {!isLoading && !error && featuredApps.length === 0 && (
-          <p className="text-center text-sm text-gray-500 py-10">Featured picks are on the way.</p>
-        )}
-
-        {!isLoading && !error && featuredApps.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredApps.map((app) => (
-              <AppCard key={app.id} app={app} />
-            ))}
-          </div>
-        )}
-
-        {!isLoading && (
-          <div className="mt-12 text-center">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 text-neon-blue font-semibold hover:text-neon-green transition-colors"
-              data-testid="button-explore"
-              data-agent-id="home-browse-more"
-            >
-              Browse the full Stackhouse
-              <span aria-hidden>→</span>
-            </Link>
-          </div>
+        {registryReady ? (
+          <Suspense fallback={<HomeRegistryTeaserSkeleton />}>
+            <HomeRegistryTeaser />
+          </Suspense>
+        ) : (
+          <HomeRegistryTeaserSkeleton />
         )}
 
         <section className="mt-20 md:mt-24 relative overflow-hidden rounded-3xl border border-cyber-light bg-cyber-dark p-8 md:p-12">
