@@ -11,7 +11,7 @@ export function meetsBronze(app: App): boolean {
 }
 
 export function meetsSilver(app: App): boolean {
-  return meetsBronze(app) && !!app.scan_cli && !!app.scan_faq && !!app.scan_viewport;
+  return meetsBronze(app) && !!app.scan_faq && !!app.scan_viewport;
 }
 
 export function meetsGold(app: App): boolean {

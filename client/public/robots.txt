@@ -1,4 +1,4 @@
-# Blueprint: https://stackapps.app/blueprint.txt
+# Blueprint: https://stackapps.app/.well-known/blueprint.txt
 
 User-agent: *
 Allow: /

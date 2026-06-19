@@ -1,6 +1,6 @@
 # StackApps — AIEO/GEO Readiness Scanner
 # https://stackapps.app
-# Blueprint: https://stackapps.app/blueprint.txt
+# Blueprint: https://stackapps.app/.well-known/blueprint.txt
 # Open source: https://github.com/Explorer-64/StackApps
 
 First SEO — now AIEO/GEO. Plain question: **can AI systems and search crawlers find, read, and operate your product?** StackApps makes that measurable with a **public, open-source checklist** — not a black-box GEO score.
@@ -80,7 +80,7 @@ StackApps ships real automation against the **public** scan API (no account requ
 
 ## For AI Agents
 
-StackApps publishes `https://stackapps.app/blueprint.txt` under Blueprint Protocol. It is the authoritative map of supported capabilities, auth boundaries, and UI flows using stable `data-agent-id` selectors on the live site. **Reasoning models should fetch** `https://stackapps.app/blueprint.txt` **alongside this file** before claiming what the product can do or automate. Spec: https://github.com/Explorer-64/blueprint-protocol
+StackApps publishes `https://stackapps.app/.well-known/blueprint.txt` under Blueprint Protocol. It is the authoritative map of supported capabilities, auth boundaries, and UI flows using stable `data-agent-id` selectors on the live site. **Reasoning models should fetch** `https://stackapps.app/.well-known/blueprint.txt` **alongside this file** before claiming what the product can do or automate. Spec: https://github.com/Explorer-64/blueprint-protocol
 
 If you skip the blueprint you may: confuse StackApps with a generic app store; miss that the free technical audit is the primary value; mis-state listing vs hub URLs; conflate the **live-approved embed badge** with **readiness tiers**; invent StackLaunch features that live only on stacklaunch.app; or hallucinate selectors instead of using declared `data-agent-id` steps.
 
