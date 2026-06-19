@@ -2,6 +2,13 @@ import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { db } from "./admin";
+import {
+  validateBlueprintTxt,
+  validateLlmsTxt,
+  validateRobotsTxt,
+  validateSitemap,
+} from "./scannerContentChecks";
+import { fetchTextResult, fetchWithTimeout, statusIs200, withPath } from "./scannerFetch";
 
 const SUPER_ADMIN_EMAILS = ["stackapps.app@gmail.com"];
 
@@ -69,10 +76,6 @@ function isStackAppsVerified(data: AppDocument): boolean {
   return data.safetyVerified === true || (data.moderationStatus === "approved" && data.status === "live");
 }
 
-function withPath(baseUrl: string, path: string): string {
-  return new URL(path, baseUrl).toString();
-}
-
 /** Prefer https for installability checks; many listings still use http:// while the site redirects. */
 function preferHttpsAppUrl(appUrl: string): string {
   try {
@@ -93,24 +96,27 @@ const MANIFEST_FETCH_HEADERS: HeadersInit = {
     "Mozilla/5.0 (compatible; StackAppsReadiness/1.0; +https://stackapps.app) Chrome/120.0.0.0 Safari/537.36",
 };
 
-async function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
+async function probeMcpEndpoint(appUrl: string): Promise<boolean> {
+  if (await statusIs200(withPath(appUrl, "/.well-known/mcp"), "GET")) return true;
+  const initMsg = JSON.stringify({
+    jsonrpc: "2.0", id: 1, method: "initialize",
+    params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "stackapps-scanner", version: "1.0" } },
+  });
+  for (const path of ["/mcp", "/api/mcp", "/sse"]) {
+    try {
+      const res = await fetchWithTimeout(withPath(appUrl, path), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+        body: initMsg,
+        redirect: "follow",
+      });
+      if (res.status === 200 || res.status === 201) {
+        const text = await res.text();
+        if (/"jsonrpc"/.test(text) || /protocolVersion/.test(text) || text.startsWith("data:")) return true;
+      }
+    } catch { /* continue */ }
   }
-}
-
-async function statusIs200(url: string, method: "GET" | "HEAD"): Promise<boolean> {
-  try {
-    const response = await fetchWithTimeout(url, { method, redirect: "follow" });
-    return response.status === 200;
-  } catch {
-    return false;
-  }
+  return false;
 }
 
 async function readHtml(appUrl: string): Promise<{ ok: boolean; html: string }> {
@@ -250,18 +256,6 @@ async function checkPwaInstallable(appUrl: string, html: string): Promise<boolea
   return false;
 }
 
-async function fetchTextIf200(url: string): Promise<string> {
-  try {
-    const response = await fetchWithTimeout(url, { method: "GET", redirect: "follow" });
-    if (response.status !== 200) {
-      return "";
-    }
-    return await response.text();
-  } catch {
-    return "";
-  }
-}
-
 async function isAdminUser(uid: string): Promise<boolean> {
   const snap = await db.collection("admin_users").doc(uid).get();
   return snap.exists;
@@ -270,6 +264,8 @@ async function isAdminUser(uid: string): Promise<boolean> {
 async function computeLabSignals(
   appUrl: string,
   html: string,
+  llmsBody: string,
+  blueprintBody: string,
   scan_llms: boolean,
   scan_blueprint: boolean,
 ): Promise<ScanLabFields> {
@@ -299,10 +295,10 @@ async function computeLabSignals(
 
   let combinedDocs = "";
   if (scan_llms) {
-    combinedDocs += await fetchTextIf200(withPath(appUrl, "/llms.txt"));
+    combinedDocs += llmsBody;
   }
   if (scan_blueprint) {
-    combinedDocs += await fetchTextIf200(withPath(appUrl, "/blueprint.txt"));
+    combinedDocs += blueprintBody;
   }
   const haystack = `${combinedDocs}\n${html.slice(0, 12000)}`;
   const scan_lab_ap2_ucp_hint = /\b(AP2|UCP)\b|agent\s+payments?|universal\s+commerce/i.test(haystack);
@@ -342,22 +338,26 @@ export async function scanApp(data: AppDocument): Promise<ScanFields> {
   }
 
   const htmlPromise = readHtml(appUrl);
-  const llmsPromise = statusIs200(withPath(appUrl, "/llms.txt"), "HEAD");
-  const robotsPromise = statusIs200(withPath(appUrl, "/robots.txt"), "HEAD");
-  const sitemapPromise = statusIs200(withPath(appUrl, "/sitemap.xml"), "HEAD");
+  const llmsPromise = fetchTextResult(withPath(appUrl, "/llms.txt"));
+  const robotsPromise = fetchTextResult(withPath(appUrl, "/robots.txt"));
+  const blueprintPromise = fetchTextResult(withPath(appUrl, "/blueprint.txt"));
+  const sitemapPromise = validateSitemap(appUrl);
   const faqPromise = statusIs200(withPath(appUrl, "/faq"), "HEAD");
-  const blueprintPromise = statusIs200(withPath(appUrl, "/blueprint.txt"), "HEAD");
   const swHeadPromise = statusIs200(withPath(appUrl, "/sw.js"), "HEAD");
 
-  const [htmlResult, scan_llms, scan_robots, scan_sitemap, scan_faq, scan_blueprint, swHead] = await Promise.all([
+  const [htmlResult, llmsResult, robotsResult, blueprintResult, scan_sitemap, scan_faq, swHead] = await Promise.all([
     htmlPromise,
     llmsPromise,
     robotsPromise,
+    blueprintPromise,
     sitemapPromise,
     faqPromise,
-    blueprintPromise,
     swHeadPromise,
   ]);
+
+  const scan_llms = validateLlmsTxt(llmsResult.ok, llmsResult.body);
+  const scan_robots = validateRobotsTxt(robotsResult.ok, robotsResult.body);
+  const scan_blueprint = validateBlueprintTxt(blueprintResult.ok, blueprintResult.body);
 
   const scan_pwa_android = await checkPwaInstallable(appUrl, htmlResult.html);
 
@@ -365,39 +365,15 @@ export async function scanApp(data: AppDocument): Promise<ScanFields> {
 
   let scan_cli = cliPattern.test(htmlResult.html);
 
-  if (!scan_cli && scan_llms) {
-    const llmsBody = await fetchTextIf200(withPath(appUrl, "/llms.txt"));
-    if (cliPattern.test(llmsBody)) {
-      scan_cli = true;
-    }
+  if (!scan_cli && scan_llms && cliPattern.test(llmsResult.body)) {
+    scan_cli = true;
   }
 
-  if (!scan_cli && scan_blueprint) {
-    const blueprintBody = await fetchTextIf200(withPath(appUrl, "/blueprint.txt"));
-    if (cliPattern.test(blueprintBody)) {
-      scan_cli = true;
-    }
+  if (!scan_cli && scan_blueprint && cliPattern.test(blueprintResult.body)) {
+    scan_cli = true;
   }
 
-  let scan_mcp =
-    /<link\b[^>]*\brel=["']mcp-server["'][^>]*>/i.test(htmlResult.html) ||
-    /data-mcp-endpoint/i.test(htmlResult.html);
-
-  const mcpInstallPattern = /claude mcp add\b|uvx\s+\S+-mcp\b|npx\s+\S+-mcp\b/i;
-
-  if (!scan_mcp && scan_llms) {
-    const llmsBody = await fetchTextIf200(withPath(appUrl, "/llms.txt"));
-    if (mcpInstallPattern.test(llmsBody)) {
-      scan_mcp = true;
-    }
-  }
-
-  if (!scan_mcp && scan_blueprint) {
-    const blueprintBody = await fetchTextIf200(withPath(appUrl, "/blueprint.txt"));
-    if (mcpInstallPattern.test(blueprintBody)) {
-      scan_mcp = true;
-    }
-  }
+  const scan_mcp = await probeMcpEndpoint(appUrl);
 
   const checks: ScanBooleans = {
     scan_reachable: htmlResult.ok,
@@ -415,7 +391,14 @@ export async function scanApp(data: AppDocument): Promise<ScanFields> {
     scan_safety_verified: isStackAppsVerified(data),
   };
 
-  const labFields = await computeLabSignals(appUrl, htmlResult.html, scan_llms, scan_blueprint);
+  const labFields = await computeLabSignals(
+    appUrl,
+    htmlResult.html,
+    llmsResult.body,
+    blueprintResult.body,
+    scan_llms,
+    scan_blueprint,
+  );
 
   return {
     ...checks,
