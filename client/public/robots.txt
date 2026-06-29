@@ -1,7 +1,12 @@
 # Blueprint: https://stackapps.app/.well-known/blueprint.txt
 
-User-agent: *
-Allow: /
+# StackApps — Public Registry & AIEO/GEO Readiness Scanner
+# Last updated: 2026-06-29
+
+# ============================================
+# AI BOT ALLOWANCES (LLMO - Large Language Model Optimization)
+# Explicitly allow AI agents to crawl for discoverability
+# ============================================
 
 User-agent: GPTBot
 Allow: /
@@ -29,5 +34,49 @@ Allow: /
 
 User-agent: cohere-ai
 Allow: /
+
+# ============================================
+# GENERAL CRAWLER RULES
+# ============================================
+
+User-agent: *
+
+# Allow public registry, marketing, and content pages
+Allow: /$
+Allow: /for-builders
+Allow: /scan
+Allow: /dashboard
+Allow: /app/
+Allow: /apps/
+Allow: /guides
+Allow: /mcp-blueprint-results
+Allow: /faq
+Allow: /privacy
+Allow: /terms
+
+# Allow AI discoverability files
+Allow: /llms.txt
+Allow: /blueprint.txt
+Allow: /.well-known/
+
+# Block logged-in, account, and admin-only areas
+Disallow: /hub
+Disallow: /settings
+Disallow: /workstation
+Disallow: /admin
+Disallow: /login
+Disallow: /logout
+Disallow: /verify/
+Disallow: /mcp-test
+Disallow: /under-construction
+
+# Block backend/API proxy paths
+Disallow: /api/
+Disallow: /stubs/
+Disallow: /stubs-bp/
+
+# ============================================
+# SITEMAPS
+# ============================================
 
 Sitemap: https://stackapps.app/sitemap.xml

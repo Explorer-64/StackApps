@@ -84,7 +84,7 @@ export default function Dashboard() {
                 Verified indie apps with public proof.
               </h1>
               <p className="mt-4 text-gray-400 text-lg leading-relaxed">
-                Vetted browser-ready tools, human-reviewed. Live apps show readiness scans (twelve checks, tier labels), embed badges, and crawler-visible proof pages.
+                Vetted browser-ready tools, human-reviewed. Live apps show readiness scans (twelve checks, tier labels), embed badges, and crawler-visible proof pages. New here? See <Link href="/for-builders" className="text-neon-blue hover:text-white transition-colors">how listing works</Link> or <Link href="/scan" className="text-neon-blue hover:text-white transition-colors">scan your app</Link> before you submit.
               </p>
             </div>
 

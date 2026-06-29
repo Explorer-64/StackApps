@@ -167,7 +167,7 @@ export default function Scan() {
           Can crawlers and agents actually use your site?
         </h1>
         <p className="mt-3 text-gray-400 text-lg">
-          Same twelve checks we ship in open source — free, no sign-in to start. One scan per domain.
+          Same twelve checks we ship in <a href="https://github.com/Explorer-64/StackApps" className="text-neon-blue hover:underline">open source</a> — free, no sign-in to start. One scan per domain. Not sure what we measure? Read the <Link href="/guides" className="text-neon-blue hover:underline font-medium">guides</Link> first.
         </p>
         <p className="mt-3 text-sm text-gray-500">
           <Link href="/guides" className="text-neon-blue hover:underline font-medium">

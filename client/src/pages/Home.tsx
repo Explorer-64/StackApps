@@ -126,7 +126,7 @@ export default function Home() {
                 <span className="block mt-1 sm:mt-1.5">You can too.</span>
               </h1>
               <p className="mt-5 md:mt-6 text-lg md:text-xl text-gray-400 max-w-xl leading-snug">
-                Start with a free scan, then publish the signals agents actually read.
+                Start with a <Link href="/scan" className="text-neon-blue hover:text-white transition-colors">free scan</Link>, then publish the signals agents actually read.
               </p>
               <p className="mt-3 text-sm text-gray-500 max-w-xl leading-relaxed">
                 &quot;Found and cited&quot; means legible, stable facts — not traffic guarantees.
@@ -214,7 +214,7 @@ export default function Home() {
               </h2>
               <p className="mt-4 text-gray-400 leading-relaxed">
                 The market is full of low-signal directories and opaque GEO widgets. StackApps leads with a <span className="text-gray-200">public, forkable checklist</span> so founders and agencies can defend the score.
-                The Stackhouse is a curated layer for apps that clear moderation — proof, not pay-to-list noise.
+                The Stackhouse is a curated layer for apps that clear moderation — proof, not pay-to-list noise. See <Link href="/for-builders" className="text-neon-blue hover:text-white transition-colors">builder benefits</Link> or read the <Link href="/faq" className="text-neon-blue hover:text-white transition-colors">FAQ</Link> for tier details.
               </p>
             </div>
 
@@ -292,6 +292,41 @@ export default function Home() {
             </p>
           </div>
         </aside>
+
+        <section className="mt-16 md:mt-20" aria-labelledby="home-faq-heading">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-neon-blue">FAQ</p>
+          <h2 id="home-faq-heading" className="mt-3 text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+            Common questions
+          </h2>
+          <p className="mt-4 text-gray-400 leading-relaxed max-w-2xl">
+            Quick answers for builders and evaluators. Full list on the <Link href="/faq" className="text-neon-blue hover:text-white transition-colors">FAQ page</Link> or in our <Link href="/guides" className="text-neon-blue hover:text-white transition-colors">scanner guides</Link>.
+          </p>
+          <div className="mt-8 space-y-4">
+            {[
+              {
+                q: 'What is StackApps?',
+                a: 'A free, open-source twelve-signal technical audit for AI and crawl readiness, plus optional public proof on The Stackhouse when you list and go live.',
+              },
+              {
+                q: 'What does the scan check?',
+                a: 'Twelve checks: crawl health (robots, sitemap, llms.txt), machine signals (FAQ, blueprint, MCP, CLI), and PWA basics. Run it free at /scan.',
+              },
+              {
+                q: 'Is StackApps free?',
+                a: 'Yes — browsing, scanning, and listing are free. Live-approved apps get proof pages, embed badges, and tier labels at no cost.',
+              },
+              {
+                q: 'What are Bronze, Silver, and Gold?',
+                a: 'Readiness tiers from the twelve checks. Bronze is baseline discoverability; Silver adds CLI, FAQ, and viewport; Gold adds MCP and blueprint.txt.',
+              },
+            ].map(({ q, a }) => (
+              <div key={q} className="rounded-2xl border border-cyber-light bg-cyber-black/60 p-5 md:p-6">
+                <h3 className="text-lg font-bold text-white">{q}</h3>
+                <p className="mt-2 text-sm text-gray-400 leading-relaxed">{a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
 
       <SiteFooter />

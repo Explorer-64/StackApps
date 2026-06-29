@@ -118,7 +118,7 @@ export default function ForBuilders() {
               Ship AI-era crawl compliance first. Earn public proof on The Stackhouse when you list.
             </h1>
             <p className="mt-6 text-lg md:text-xl text-gray-400 leading-relaxed">
-              The product is an <span className="text-gray-200 font-semibold">open, auditable</span> readiness scan (same checks on GitHub). The Stackhouse is human-moderated visibility for browser-ready tools — so agents and buyers see a vetted signal, not another paid directory listing.
+              The product is an <span className="text-gray-200 font-semibold">open, auditable</span> readiness scan (same checks on GitHub). The Stackhouse is human-moderated visibility for browser-ready tools — so agents and buyers see a vetted signal, not another paid directory listing. <Link href="/scan" className="text-neon-blue hover:text-white transition-colors">Run the free scan</Link> first, then read the <Link href="/faq" className="text-neon-blue hover:text-white transition-colors">FAQ</Link> for tier details.
             </p>
             <Link
               href="/hub"

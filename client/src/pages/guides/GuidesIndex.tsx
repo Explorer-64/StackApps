@@ -23,7 +23,7 @@ export default function GuidesIndex() {
           Ship what the scan actually measures
         </h1>
         <p className="mt-4 text-gray-400 text-lg leading-relaxed">
-          No black box: every check maps to code in our repo. These three notes cut confusion for builders who want Bronze, Silver, or Gold without guessing.
+          No black box: every check maps to code in our repo. These three notes cut confusion for builders who want Bronze, Silver, or Gold without guessing. Start with a <Link href="/scan" className="text-neon-blue hover:text-white transition-colors">free scan</Link>, then see the <Link href="/faq" className="text-neon-blue hover:text-white transition-colors">FAQ</Link> for listing questions.
         </p>
 
         <ol className="mt-10 space-y-4 list-decimal list-inside marker:text-neon-purple marker:font-bold">
