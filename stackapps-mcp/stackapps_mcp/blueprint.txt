@@ -1,0 +1,297 @@
+# BLUEPRINT: StackApps MCP Gateway [x402]
+# Version: 1.1.1
+# URL: https://mcp.stackapps.app
+# Updated: 2026-07-02
+
+## IDENTITY
+name: StackApps MCP Gateway
+description: Unified x402 gateway for the StackApps tool suite. Pay per call in USDC
+  on Base mainnet — no account, no API key, no subscription. Each member app
+  (Imagcon today; StackBill, StackSlip, and others as they ship) contributes tools
+  here. One server, one install, the full suite.
+category: developer-tools
+contact: support@stackapps.app
+
+## SUMMARY
+tagline: One server. All StackApps tools. Pay per call in USDC.
+audience: AI agents and developers who need StackApps suite tools without creating an
+  account. Requires an EVM wallet funded with USDC on Base mainnet (eip155:8453).
+capabilities:
+  - create-pwa-icons-from-image: Upload image → full PWA icon set (27 files + manifest.json) — $0.10 USDC
+  - create-splash-screens-from-image: Upload image → 16 iOS/iPad splash screens — $0.10 USDC
+  - generate-pwa-icons: Text prompt → AI-generated PWA icon set — $0.295 USDC
+  - generate-image: Text prompt → AI-generated source image (image_key + preview URL) — $0.195 USDC
+  - generate-splash-screens: Text prompt → AI-generated 16 iOS/iPad splash screens — $0.295 USDC
+  - setup-wallet-profile: Activate permanent account from first-payment profile token — free
+
+## AUTH
+provider: none
+payment: x402 — EVM wallet, USDC on Base mainnet (eip155:8453)
+note: No Firebase account or API key required. Each tool call settles independently
+  on-chain via EIP-3009. The MCP server signs payment authorizations with the
+  configured wallet and retries automatically — no user interaction needed per call.
+
+## WALLET PROFILE
+note: On every first payment from a new wallet, Imagcon auto-creates a 60-day
+  temporary account linked to that wallet address. No action required.
+headers-on-first-payment:
+  - X-Imagcon-Token: profile token (tok_...) — wallet-independent secondary ID
+  - X-Imagcon-Api-Key: Imagcon API key (ic_live_...) — first payment only; unlocks all 14 imagcon-mcp tools
+surfaced-by: stackapps-mcp appends profile info to tool results on first payment.
+  Example: "Profile token: tok_abc... (saved for 60 days). Imagcon API key issued:
+  ic_live_... — unlocks all imagcon-mcp tools. Call setup_wallet_profile to make
+  this account permanent."
+activate-endpoint: POST https://imagcon.app/routes/x402/profile/activate
+  body: { "profile_token": "tok_...", "wallet_address": "0x...", "name": "...",
+    "terms_confirmed": true }
+  note: stackapps-mcp derives wallet_address from WALLET_PRIVATE_KEY automatically;
+    agents only pass profile_token and name to setup_wallet_profile.
+paper-plan: If setup_wallet_profile is never called, the temp account auto-deletes
+  after 60 days. Next payment from same wallet starts a fresh 60-day window.
+
+## MCP
+server: stackapps-mcp
+preferred-transport: stdio
+install: claude mcp add stackapps -- uvx --from https://stackapps.app/downloads/stackapps_mcp-0.1.1-py3-none-any.whl stackapps-mcp --wallet-key 0x...
+requirements: uv/uvx installed (https://docs.astral.sh/uv/). Python 3.11–3.12.
+  EVM wallet private key. USDC on Base mainnet in that wallet.
+
+### TRANSPORT (stdio)
+command: uvx --from https://stackapps.app/downloads/stackapps_mcp-0.1.1-py3-none-any.whl stackapps-mcp --wallet-key 0x...
+note: Runs as a local stdio process. Use WALLET_PRIVATE_KEY env var rather than
+  passing the key on the command line.
+
+### MCP TOOLS
+server: stackapps-mcp
+
+create_pwa_icons_from_image | image_path, output_dir | Full PWA icon set (27 files + manifest.json) from PNG/JPEG/WebP ($0.10 USDC) | source: imagcon.app
+create_splash_screens_from_image | image_path, background_color, output_dir | 16 iOS/iPad splash screens from PNG/JPEG/WebP ($0.10 USDC) | source: imagcon.app
+generate_pwa_icons | description, output_dir | AI-generate PWA icon set from text prompt ($0.295 USDC) | source: imagcon.app
+generate_image | description | AI-generate source image, returns image_key + preview_url ($0.195 USDC) | source: imagcon.app
+generate_splash_screens | description, background_color, output_dir | AI-generate 16 iOS/iPad splash screens ($0.295 USDC) | source: imagcon.app
+setup_wallet_profile | profile_token, name, company_name, tax_id | Activate permanent account from first-payment profile token (free) | source: imagcon.app
+
+### PAYMENTS
+network: Base mainnet (eip155:8453)
+asset: USDC
+mechanism: x402 (HTTP 402 / EIP-3009)
+flow: Each tool call makes an HTTP request to the source app's x402 endpoint. The
+  server receives a 402 challenge, signs a payment authorization with the configured
+  wallet, and retries. Settlement is on-chain; funds go directly to the source app's
+  wallet. StackApps takes no cut.
+prices:
+  - $0.10 USDC: create_pwa_icons_from_image, create_splash_screens_from_image
+  - $0.195 USDC: generate_image
+  - $0.295 USDC: generate_pwa_icons, generate_splash_screens
+  - free: setup_wallet_profile (no x402 charge)
+
+### REQUIRED-SECRETS
+- WALLET_PRIVATE_KEY:
+    description: EVM wallet private key for signing x402 payment authorizations
+    format: 0x-prefixed hex string (64 hex chars after 0x)
+    funding: Wallet must hold USDC on Base mainnet.
+    storage:
+      shell: export WALLET_PRIVATE_KEY=0x... in ~/.zshrc or ~/.bashrc
+      claude-code: pass via --wallet-key argument in claude mcp add command
+    warning: never commit the raw key to git
+
+### CLIENT-CONFIGS
+
+#### Claude Code (CLI)
+claude mcp add stackapps -- uvx --from https://stackapps.app/downloads/stackapps_mcp-0.1.1-py3-none-any.whl stackapps-mcp --wallet-key 0x...
+
+#### Claude Code / Cursor / Windsurf / Cline (JSON)
+{
+  "mcpServers": {
+    "stackapps": {
+      "command": "uvx",
+      "args": ["--from", "https://stackapps.app/downloads/stackapps_mcp-0.1.1-py3-none-any.whl", "stackapps-mcp", "--wallet-key", "0x..."]
+    }
+  }
+}
+
+## ACCESS
+preferred: mcp
+
+## CAPABILITY: create-pwa-icons-from-image
+description: Generate a full PWA icon set from an existing local image file.
+  Produces 27 files covering all required PWA, iOS, Android, Windows tile, and
+  Safari pinned-tab sizes, plus manifest.json, packaged as a ZIP and extracted
+  to output_dir. No AI generation — source image is uploaded directly.
+  Powered by Imagcon (imagcon.app).
+input:
+  - name: image_path
+    type: string
+    required: true
+    description: Absolute path to a PNG, JPEG, or WebP file on the local machine.
+  - name: output_dir
+    type: string
+    required: false
+    default: ./public/icons
+    description: Directory where the ZIP is extracted. Relative paths resolve
+      against the MCP server process directory.
+output:
+  - type: file
+    description: ZIP extracted to output_dir. Contains icons/ subdirectory and manifest.json.
+auth-required: false
+payment: $0.10 USDC per call (Base mainnet, x402)
+source: imagcon.app/routes/x402/icons-from-image
+
+### MCP
+tool: create_pwa_icons_from_image
+
+## CAPABILITY: create-splash-screens-from-image
+description: Generate 16 iOS and iPad launch splash screens from an existing local
+  image file. Covers all current iPhone and iPad canvas sizes. Output is a ZIP
+  of flat PNG files extracted to output_dir. No AI generation — source image is
+  uploaded directly. Powered by Imagcon (imagcon.app).
+input:
+  - name: image_path
+    type: string
+    required: true
+    description: Absolute path to a PNG, JPEG, or WebP file on the local machine.
+  - name: background_color
+    type: string
+    required: false
+    default: "#ffffff"
+    description: Hex color string for the splash screen background (e.g. #1a1a2e).
+  - name: output_dir
+    type: string
+    required: false
+    default: ./public/splash
+    description: Directory where the ZIP is extracted.
+output:
+  - type: file
+    description: ZIP extracted to output_dir. Contains 16 flat PNG splash screens.
+auth-required: false
+payment: $0.10 USDC per call (Base mainnet, x402)
+source: imagcon.app/routes/x402/splash-from-image
+
+### MCP
+tool: create_splash_screens_from_image
+
+## CAPABILITY: generate-pwa-icons
+description: AI-generate a complete PWA icon set from a text description of your app.
+  Imagcon generates a source image from the prompt, then produces all 27 PWA icon
+  sizes plus manifest.json, packaged as a ZIP extracted to output_dir.
+  Powered by Imagcon (imagcon.app).
+input:
+  - name: description
+    type: string
+    required: true
+    description: Text description of the app — used as the AI image generation prompt.
+      Be specific about colors, style, and subject matter.
+  - name: output_dir
+    type: string
+    required: false
+    default: ./public/icons
+    description: Directory where the ZIP is extracted.
+output:
+  - type: file
+    description: ZIP extracted to output_dir. Contains AI-generated source image,
+      icons/ subdirectory, and manifest.json.
+auth-required: false
+payment: $0.295 USDC per call (Base mainnet, x402)
+source: imagcon.app/routes/x402/generate-pwa-icons
+
+### MCP
+tool: generate_pwa_icons
+
+## CAPABILITY: generate-image
+description: AI-generate a source image from a text description. Returns image_key
+  and a preview URL. Use this when you want to review the generated image before
+  committing to a full icon set generation. Powered by Imagcon (imagcon.app).
+input:
+  - name: description
+    type: string
+    required: true
+    description: Text description used as the AI image generation prompt.
+output:
+  - type: json
+    description: image_key (string) and preview_url (string). The image_key can
+      be passed to Imagcon's create_icons_from_key tool (via imagcon-mcp) to
+      generate the full icon set without regenerating the image.
+auth-required: false
+payment: $0.195 USDC per call (Base mainnet, x402)
+source: imagcon.app/routes/x402/generate-image
+
+### MCP
+tool: generate_image
+
+## CAPABILITY: generate-splash-screens
+description: AI-generate 16 iOS and iPad launch splash screens from a text description
+  of your app. Imagcon generates a source image from the prompt, then produces all
+  splash screen canvas sizes, packaged as a ZIP extracted to output_dir.
+  Powered by Imagcon (imagcon.app).
+input:
+  - name: description
+    type: string
+    required: true
+    description: Text description used as the AI image generation prompt.
+  - name: background_color
+    type: string
+    required: false
+    default: "#ffffff"
+    description: Hex color string for the splash screen background.
+  - name: output_dir
+    type: string
+    required: false
+    default: ./public/splash
+    description: Directory where the ZIP is extracted.
+output:
+  - type: file
+    description: ZIP extracted to output_dir. Contains AI-generated source image
+      and 16 flat PNG splash screens.
+auth-required: false
+payment: $0.295 USDC per call (Base mainnet, x402)
+source: imagcon.app/routes/x402/generate-splash-screens
+
+### MCP
+tool: generate_splash_screens
+
+## CAPABILITY: setup-wallet-profile
+description: Activate a permanent Imagcon account linked to your wallet. Call this
+  after the first x402 payment using the profile_token returned in the tool result.
+  Permanent accounts keep payment history indefinitely. Without activation the
+  temp account auto-deletes after 60 days (paper plan).
+input:
+  - name: profile_token
+    type: string
+    required: true
+    description: The tok_... token returned in the tool result after the first
+      x402 payment from this wallet.
+  - name: wallet_address
+    type: string
+    required: true
+    description: Derived from WALLET_PRIVATE_KEY by stackapps-mcp (not an agent input).
+  - name: name
+    type: string
+    required: true
+    description: Display name for the profile (person or business name).
+  - name: company_name
+    type: string
+    required: false
+    description: Optional business name.
+  - name: tax_id
+    type: string
+    required: false
+    description: Optional tax ID / VAT number.
+output:
+  - type: string
+    description: Confirmation message with account status.
+auth-required: false
+payment: free (no x402 charge)
+source: imagcon.app/routes/x402/profile/activate
+
+### MCP
+tool: setup_wallet_profile
+
+## SUITE
+note: This gateway grows as member apps ship x402 endpoints. Each new capability
+  will appear in ## MCP TOOLS above and as a ## CAPABILITY block below.
+  The install command and server URL do not change — agents with stackapps-mcp
+  already installed receive new tools automatically on next connect.
+members:
+  - imagcon.app — PWA icons, splash screens, AI image generation (live)
+  - stackbill.app — invoicing (planned)
+  - stackslip.app — packing slips (planned)
