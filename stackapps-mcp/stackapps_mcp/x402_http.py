@@ -4,6 +4,7 @@ import os
 
 import httpx
 from eth_account import Account
+from eth_account.messages import encode_defunct
 from x402 import NoMatchingRequirementsError, max_amount, x402ClientSync
 from x402.http.x402_http_client import x402HTTPClientSync
 from x402.mechanisms.evm.exact import ExactEvmClientScheme
@@ -40,6 +41,7 @@ class SuiteX402Http:
 
     def __init__(self, private_key: str, network: str = "eip155:8453") -> None:
         account = Account.from_key(private_key)
+        self._account = account
         self._wallet_address = account.address.lower()
         x402_client = x402ClientSync()
         x402_client.register(network, ExactEvmClientScheme(signer=account))
@@ -51,6 +53,12 @@ class SuiteX402Http:
     @property
     def wallet_address(self) -> str:
         return self._wallet_address
+
+    def sign_message(self, text: str) -> str:
+        """EIP-191 personal_sign over a UTF-8 string; returns 0x-prefixed hex."""
+        signed = self._account.sign_message(encode_defunct(text=text))
+        sig = signed.signature.hex()
+        return sig if sig.startswith("0x") else "0x" + sig
 
     def post(
         self,

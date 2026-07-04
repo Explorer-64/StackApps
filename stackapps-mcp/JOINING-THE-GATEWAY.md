@@ -62,6 +62,32 @@ contract (framework doesn't matter; Imagcon's backend is the worked example):
 
 ---
 
+## Identity & profile endpoints (if the app has them) — security rules
+
+Learned from Imagcon's wallet-profile hardening (2026-07-04). If a member app
+adds any account-ish surface to its x402 flows (profiles, saved data, tokens),
+these rules apply:
+
+1. **Secrets never appear in unauthenticated reads.** A public lookup endpoint
+   may return status and dates — never tokens, API keys, or anything that
+   gates a write. (Imagcon originally returned `profile_token` in the public
+   wallet lookup, which made it derivable from public on-chain data.)
+2. **Public identifiers never authorize writes.** A wallet address is public
+   information; anyone can enumerate payers on-chain. Any endpoint that
+   creates/changes profile data must require proof of wallet control:
+   a signature from the wallet key over the request payload.
+3. **Signature checks must be replay-proof.** The signed message includes a
+   timestamp or nonce, and the server rejects stale/reused signatures.
+4. **Zero human friction.** The MCP client signs automatically with the same
+   key it pays with — no extra agent inputs, no user prompts. Agents bounce at
+   any extra step (empirically confirmed by Abe). If a security measure adds a
+   visible step, redesign it to ride on the payment key instead.
+5. **The strong credential (API key etc.) gates data access only** — saved
+   content, galleries, full MCP tools. Do not require it for activation or
+   profile writes; users who haven't activated yet don't have it.
+
+---
+
 ## Part B — Gateway side (this package)
 
 1. **Adapter module:** create `stackapps_mcp/<app>.py` modeled on

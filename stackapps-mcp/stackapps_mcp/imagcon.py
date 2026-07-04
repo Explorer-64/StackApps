@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json as _json
 import os
+import time
 
 import httpx
 
@@ -112,11 +113,16 @@ class ImagconX402Client:
         company_name: str | None = None,
         tax_id: str | None = None,
     ) -> dict:
+        # Imagcon requires proof of wallet control: EIP-191 signature over
+        # "imagcon.app/profile/activate:{token}:{unix_ts}", ±300s server window.
+        message = f"imagcon.app/profile/activate:{profile_token}:{int(time.time())}"
         body: dict = {
             "profile_token": profile_token,
             "wallet_address": self.wallet_address,
             "name": name,
             "terms_confirmed": terms_confirmed,
+            "signature": self._x402.sign_message(message),
+            "message": message,
         }
         if company_name:
             body["company_name"] = company_name

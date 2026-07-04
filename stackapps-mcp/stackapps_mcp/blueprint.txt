@@ -1,5 +1,5 @@
 # BLUEPRINT: StackApps MCP Gateway [x402]
-# Version: 1.2.1
+# Version: 1.2.2
 # URL: https://mcp.stackapps.app
 # Updated: 2026-07-04
 
@@ -47,7 +47,10 @@ surfaced-by: stackapps-suite-mcp appends a non-secret opt-in message to tool res
   with that key (store securely, not in chat)."
 activate-endpoint: POST https://imagcon.app/routes/x402/profile/activate
   body: { "profile_token": "tok_...", "wallet_address": "0x...", "name": "...",
-    "terms_confirmed": true }
+    "terms_confirmed": true, "signature": "0x...", "message": "imagcon.app/profile/activate:tok_...:<unix_ts>" }
+  signature: EIP-191 personal_sign over the message, signed with the paying wallet
+    key — stackapps-suite-mcp signs automatically; no agent input required.
+    Server verifies the recovered address matches wallet_address (±300s window).
   terms: https://imagcon.app/terms-of-service
   note: stackapps-suite-mcp derives wallet_address from WALLET_PRIVATE_KEY automatically;
     agents pass name and terms_confirmed to setup_wallet_profile. profile_token defaults
@@ -60,12 +63,12 @@ server: stackapps-suite-mcp
 preferred-transport: stdio
 http-transport: discovery only — https://mcp.stackapps.app serves blueprint.txt; paid tools
   require local stdio with WALLET_PRIVATE_KEY. Do not use HTTP MCP on Cloud Run.
-install: claude mcp add stackapps-suite -- uvx --from https://stackapps.app/downloads/stackapps_suite_mcp-0.1.3-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
+install: claude mcp add stackapps-suite -- uvx --from https://stackapps.app/downloads/stackapps_suite_mcp-0.1.4-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 requirements: uv/uvx installed (https://docs.astral.sh/uv/). Python 3.11–3.12.
   EVM wallet private key. USDC on Base mainnet in that wallet.
 
 ### TRANSPORT (stdio)
-command: uvx --from https://stackapps.app/downloads/stackapps_suite_mcp-0.1.3-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
+command: uvx --from https://stackapps.app/downloads/stackapps_suite_mcp-0.1.4-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 note: Runs as a local stdio process. Use WALLET_PRIVATE_KEY env var rather than
   passing the key on the command line.
 
@@ -115,14 +118,14 @@ client-safety: The server refuses to sign any payment challenge that does not pa
 ### CLIENT-CONFIGS
 
 #### Claude Code (CLI)
-claude mcp add stackapps-suite -- uvx --from https://stackapps.app/downloads/stackapps_suite_mcp-0.1.3-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
+claude mcp add stackapps-suite -- uvx --from https://stackapps.app/downloads/stackapps_suite_mcp-0.1.4-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 
 #### Claude Code / Cursor / Windsurf / Cline (JSON)
 {
   "mcpServers": {
     "stackapps-suite": {
       "command": "uvx",
-      "args": ["--from", "https://stackapps.app/downloads/stackapps_suite_mcp-0.1.3-py3-none-any.whl", "stackapps-suite-mcp", "--wallet-key", "0x..."]
+      "args": ["--from", "https://stackapps.app/downloads/stackapps_suite_mcp-0.1.4-py3-none-any.whl", "stackapps-suite-mcp", "--wallet-key", "0x..."]
     }
   }
 }

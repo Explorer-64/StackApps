@@ -19,7 +19,7 @@ mcp = FastMCP("stackapps-suite-mcp", stateless_http=True)
 _client: ImagconX402Client | None = None
 _blueprint_text = (Path(__file__).parent / "blueprint.txt").read_text(encoding="utf-8")
 _WHEEL_URL = (
-    "https://stackapps.app/downloads/stackapps_suite_mcp-0.1.3-py3-none-any.whl"
+    "https://stackapps.app/downloads/stackapps_suite_mcp-0.1.4-py3-none-any.whl"
 )
 
 

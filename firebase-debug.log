@@ -1,0 +1,33 @@
+[debug] [2026-07-04T18:30:04.580Z] ----------------------------------------------------------------------
+[debug] [2026-07-04T18:30:04.593Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\abere\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting
+[debug] [2026-07-04T18:30:04.595Z] CLI Version:   15.15.0
+[debug] [2026-07-04T18:30:04.595Z] Platform:      win32
+[debug] [2026-07-04T18:30:04.595Z] Node Version:  v22.13.0
+[debug] [2026-07-04T18:30:04.596Z] Time:          Sat Jul 04 2026 11:30:04 GMT-0700 (Pacific Daylight Time)
+[debug] [2026-07-04T18:30:04.597Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-04T18:30:12.124Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-04T18:30:12.126Z] > authorizing via signed-in user (abereimer64@gmail.com)
+[debug] [2026-07-04T18:30:12.127Z] [iam] checking project stackapps-dcab1 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-07-04T18:30:12.130Z] Checked if tokens are valid: false, expires at: 1783189637834
+[debug] [2026-07-04T18:30:12.130Z] Checked if tokens are valid: false, expires at: 1783189637834
+[debug] [2026-07-04T18:30:12.131Z] > refreshing access token with scopes: []
+[debug] [2026-07-04T18:30:12.139Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-04T18:30:12.140Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-04T18:30:12.519Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-07-04T18:30:12.520Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-04T18:30:12.611Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/stackapps-dcab1:testIamPermissions [none]
+[debug] [2026-07-04T18:30:12.612Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/stackapps-dcab1:testIamPermissions  x-goog-user-project=stackapps-dcab1
+[debug] [2026-07-04T18:30:12.612Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/stackapps-dcab1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-07-04T18:30:12.890Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/stackapps-dcab1:testIamPermissions 200
+[debug] [2026-07-04T18:30:12.890Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/stackapps-dcab1:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-07-04T18:30:12.892Z] Checked if tokens are valid: true, expires at: 1783193411521
+[debug] [2026-07-04T18:30:12.893Z] Checked if tokens are valid: true, expires at: 1783193411521
+[debug] [2026-07-04T18:30:12.893Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/stackapps-dcab1 [none]
+[debug] [2026-07-04T18:30:13.402Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/stackapps-dcab1 200
+[debug] [2026-07-04T18:30:13.402Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/stackapps-dcab1 {"projectId":"stackapps-dcab1","projectNumber":"789852007930","displayName":"StackApps","name":"projects/stackapps-dcab1","resources":{"hostingSite":"stackapps-dcab1"},"state":"ACTIVE","labels":{"firebase":"enabled","firebase/storage-default-bucket":"created"},"etag":"1_6caa6860-eb47-471d-abae-1a7334e6cca0"}
+[info] 
+[info] === Deploying to 'stackapps-dcab1'...
+[info] 
+[info] i  deploying hosting 
+[info] Running command: npm run build
