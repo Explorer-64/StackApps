@@ -1,11 +1,11 @@
 {
-  "name": "stackapps-mcp",
+  "name": "stackapps-readiness-mcp",
   "version": "0.1.0",
   "description": "Model Context Protocol server for StackApps — readiness scan and docs pointers over stdio.",
   "type": "module",
   "license": "MIT",
   "bin": {
-    "stackapps-mcp": "./dist/server.js"
+    "stackapps-readiness-mcp": "./dist/server.js"
   },
   "files": [
     "dist"

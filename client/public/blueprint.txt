@@ -25,6 +25,10 @@ capabilities:
   - rerun-readiness-scan: Re-run the Site Readiness scan for an owned live-approved app
   - embed-badge: Retrieve the embeddable SVG badge for a verified listing
 
+## SUITE CAPABILITIES
+icons/splash/x402:  mcp.stackapps.app  | see https://mcp.stackapps.app/blueprint.txt
+readiness scan:     stackapps.app      | see this blueprint (readiness_scan via npx stackapps-readiness-mcp)
+
 ## AUTH
 provider: firebase
 methods: email-password, oauth-google
@@ -40,12 +44,13 @@ steps:
   7. VERIFY url == "/hub"
 
 ## MCP
-server: stackapps-mcp
+server: stackapps-readiness-mcp
 preferred-transport: stdio
-install: npx stackapps-mcp
+install: npx stackapps-readiness-mcp
+note: Readiness scan only. For paid x402 suite tools (Imagcon icons/splash), see ## SUITE CAPABILITIES.
 
 ### TRANSPORT (stdio)
-command: npx stackapps-mcp
+command: npx stackapps-readiness-mcp
 
 ### TOOLS
 - readiness_scan: Run the twelve-signal Site Readiness scan on any public URL.

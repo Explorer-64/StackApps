@@ -4,22 +4,11 @@ import os
 
 import uvicorn
 
-from stackapps_mcp.client import ImagconX402Client
-from stackapps_mcp.server import create_app, set_client
+from stackapps_mcp.server import create_app
 
-
-def _bootstrap_client() -> None:
-    key = (os.environ.get("WALLET_PRIVATE_KEY") or "").strip()
-    if not key:
-        return
-    if not key.startswith("0x"):
-        key = "0x" + key
-    network = os.environ.get("X402_NETWORK", "eip155:8453")
-    set_client(ImagconX402Client(key, network))
-
-
-_bootstrap_client()
-app = create_app()
+# Cloud Run serves blueprint discovery only. NEVER set WALLET_PRIVATE_KEY here —
+# a funded wallet on a public endpoint would be a drain vector.
+app = create_app(discovery_only=True)
 
 
 def main() -> None:

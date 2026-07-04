@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "stackapps-mcp"
-version = "0.1.1"
-description = "MCP server for StackApps tools including Imagcon x402 PWA assets"
+name = "stackapps-suite-mcp"
+version = "0.1.3"
+description = "MCP gateway for StackApps suite tools (Imagcon x402 PWA assets)"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Abe Reimer" }]
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-stackapps-mcp = "stackapps_mcp.__main__:main"
+stackapps-suite-mcp = "stackapps_mcp.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["stackapps_mcp"]

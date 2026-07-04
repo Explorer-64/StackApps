@@ -71,12 +71,16 @@ Not invoicing, accounting, CRM, or a Wave/QuickBooks-style business suite. Not S
 - FAQ at /faq: https://stackapps.app/guides/faq
 - CLI & Silver tier: https://stackapps.app/guides/cli-silver
 
+## Suite MCP (paid x402 tools)
+
+For Imagcon PWA icons, splash screens, and AI image generation via x402 USDC payments, see https://mcp.stackapps.app/blueprint.txt and install `stackapps-suite-mcp` (Python stdio, local wallet required).
+
 ## First-party CLI & MCP (same scan as the website)
 
 StackApps ships real automation against the **public** scan API (no account required; server enforces per-domain rules).
 
 - **CLI** (`stackapps` on PATH after global install): `npm install -g stackapps-cli` then `stackapps scan https://your.app` — or one-off `npx stackapps-cli scan https://your.app` once published to npm. From a clone before publish: `npm run build:agents` then `node packages/stackapps-cli/dist/cli.js scan https://your.app`. Monorepo source: `packages/stackapps-cli` on GitHub.
-- **MCP** (stdio for Claude Desktop, Cursor, etc.): run `npx stackapps-mcp` and use tool **`readiness_scan`** with `{ "url": "https://..." }`. From a clone: `npm run build:agents` then point your client at `node packages/stackapps-mcp/dist/server.js`. Monorepo source: `packages/stackapps-mcp`. Build locally: `npm run build:agents` from the repo root.
+- **MCP** (stdio for Claude Desktop, Cursor, etc.): run `npx stackapps-readiness-mcp` and use tool **`readiness_scan`** with `{ "url": "https://..." }`. From a clone: `npm run build:agents` then point your client at `node packages/stackapps-mcp/dist/server.js`. Monorepo source: `packages/stackapps-mcp`. Build locally: `npm run build:agents` from the repo root.
 
 ## For AI Agents
 

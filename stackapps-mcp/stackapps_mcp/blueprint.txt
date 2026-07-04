@@ -1,14 +1,14 @@
 # BLUEPRINT: StackApps MCP Gateway [x402]
-# Version: 1.1.1
+# Version: 1.2.1
 # URL: https://mcp.stackapps.app
-# Updated: 2026-07-02
+# Updated: 2026-07-04
 
 ## IDENTITY
 name: StackApps MCP Gateway
 description: Unified x402 gateway for the StackApps tool suite. Pay per call in USDC
-  on Base mainnet — no account, no API key, no subscription. Each member app
-  (Imagcon today; StackBill, StackSlip, and others as they ship) contributes tools
-  here. One server, one install, the full suite.
+  on Base mainnet — no account required to start; first x402 payment may issue a temp
+  API key (first payment only). Each member app (Imagcon today; StackBill, StackSlip,
+  and others as they ship) contributes tools here. One server, one install, the full suite.
 category: developer-tools
 contact: support@stackapps.app
 
@@ -22,12 +22,13 @@ capabilities:
   - generate-pwa-icons: Text prompt → AI-generated PWA icon set — $0.295 USDC
   - generate-image: Text prompt → AI-generated source image (image_key + preview URL) — $0.195 USDC
   - generate-splash-screens: Text prompt → AI-generated 16 iOS/iPad splash screens — $0.295 USDC
+  - get-wallet-profile: Look up temp vs permanent wallet profile — free
   - setup-wallet-profile: Activate permanent account from first-payment profile token — free
 
 ## AUTH
 provider: none
 payment: x402 — EVM wallet, USDC on Base mainnet (eip155:8453)
-note: No Firebase account or API key required. Each tool call settles independently
+note: No Firebase account or API key required to start. Each tool call settles independently
   on-chain via EIP-3009. The MCP server signs payment authorizations with the
   configured wallet and retries automatically — no user interaction needed per call.
 
@@ -35,41 +36,49 @@ note: No Firebase account or API key required. Each tool call settles independen
 note: On every first payment from a new wallet, Imagcon auto-creates a 60-day
   temporary account linked to that wallet address. No action required.
 headers-on-first-payment:
-  - X-Imagcon-Token: profile token (tok_...) — wallet-independent secondary ID
-  - X-Imagcon-Api-Key: Imagcon API key (ic_live_...) — first payment only; unlocks all 14 imagcon-mcp tools
-surfaced-by: stackapps-mcp appends profile info to tool results on first payment.
-  Example: "Profile token: tok_abc... (saved for 60 days). Imagcon API key issued:
-  ic_live_... — unlocks all imagcon-mcp tools. Call setup_wallet_profile to make
-  this account permanent."
+  - X-Imagcon-Token: profile token (tok_...) — stored in session only, never echoed in tool text
+  - X-Imagcon-Profile-Setup: activate URL (non-secret) — first payment only
+  - X-Imagcon-Api-Key: Imagcon API key — first payment only; unlocks all 14 imagcon-mcp tools
+surfaced-by: stackapps-suite-mcp appends a non-secret opt-in message to tool results on
+  first payment only (when X-Imagcon-Profile-Setup is present). Secrets stay in session
+  memory — never in chat logs. Example: "A 60-day temp account was created for your wallet.
+  To keep it permanently (free), call setup_wallet_profile with the profile token from
+  secure storage, or visit the activate URL. An Imagcon API key was issued — use imagcon-mcp
+  with that key (store securely, not in chat)."
 activate-endpoint: POST https://imagcon.app/routes/x402/profile/activate
   body: { "profile_token": "tok_...", "wallet_address": "0x...", "name": "...",
     "terms_confirmed": true }
-  note: stackapps-mcp derives wallet_address from WALLET_PRIVATE_KEY automatically;
-    agents only pass profile_token and name to setup_wallet_profile.
+  terms: https://imagcon.app/terms-of-service
+  note: stackapps-suite-mcp derives wallet_address from WALLET_PRIVATE_KEY automatically;
+    agents pass name and terms_confirmed to setup_wallet_profile. profile_token defaults
+    to the session token from the first paid call if omitted.
 paper-plan: If setup_wallet_profile is never called, the temp account auto-deletes
   after 60 days. Next payment from same wallet starts a fresh 60-day window.
 
 ## MCP
-server: stackapps-mcp
+server: stackapps-suite-mcp
 preferred-transport: stdio
-install: claude mcp add stackapps -- uvx --from https://stackapps.app/downloads/stackapps_mcp-0.1.1-py3-none-any.whl stackapps-mcp --wallet-key 0x...
+http-transport: discovery only — https://mcp.stackapps.app serves blueprint.txt; paid tools
+  require local stdio with WALLET_PRIVATE_KEY. Do not use HTTP MCP on Cloud Run.
+install: claude mcp add stackapps-suite -- uvx --from https://stackapps.app/downloads/stackapps_suite_mcp-0.1.3-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 requirements: uv/uvx installed (https://docs.astral.sh/uv/). Python 3.11–3.12.
   EVM wallet private key. USDC on Base mainnet in that wallet.
 
 ### TRANSPORT (stdio)
-command: uvx --from https://stackapps.app/downloads/stackapps_mcp-0.1.1-py3-none-any.whl stackapps-mcp --wallet-key 0x...
+command: uvx --from https://stackapps.app/downloads/stackapps_suite_mcp-0.1.3-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 note: Runs as a local stdio process. Use WALLET_PRIVATE_KEY env var rather than
   passing the key on the command line.
 
 ### MCP TOOLS
-server: stackapps-mcp
+server: stackapps-suite-mcp
 
 create_pwa_icons_from_image | image_path, output_dir | Full PWA icon set (27 files + manifest.json) from PNG/JPEG/WebP ($0.10 USDC) | source: imagcon.app
 create_splash_screens_from_image | image_path, background_color, output_dir | 16 iOS/iPad splash screens from PNG/JPEG/WebP ($0.10 USDC) | source: imagcon.app
 generate_pwa_icons | description, output_dir | AI-generate PWA icon set from text prompt ($0.295 USDC) | source: imagcon.app
 generate_image | description | AI-generate source image, returns image_key + preview_url ($0.195 USDC) | source: imagcon.app
 generate_splash_screens | description, background_color, output_dir | AI-generate 16 iOS/iPad splash screens ($0.295 USDC) | source: imagcon.app
-setup_wallet_profile | profile_token, name, company_name, tax_id | Activate permanent account from first-payment profile token (free) | source: imagcon.app
+get_wallet_profile | (none) | Look up temp vs permanent wallet profile (free) | source: imagcon.app
+setup_wallet_profile | name, terms_confirmed, profile_token, company_name, tax_id | Activate permanent account from first-payment profile token (free) | source: imagcon.app
 
 ### PAYMENTS
 network: Base mainnet (eip155:8453)
@@ -83,7 +92,11 @@ prices:
   - $0.10 USDC: create_pwa_icons_from_image, create_splash_screens_from_image
   - $0.195 USDC: generate_image
   - $0.295 USDC: generate_pwa_icons, generate_splash_screens
-  - free: setup_wallet_profile (no x402 charge)
+  - free: get_wallet_profile, setup_wallet_profile (no x402 charge)
+client-safety: The server refuses to sign any payment challenge that does not pay
+  the StackApps suite wallet, or that exceeds the per-call cap ($0.50 USDC by
+  default; override with STACKAPPS_MAX_USD_PER_CALL). A compromised or spoofed
+  endpoint cannot redirect or inflate payments.
 
 ### REQUIRED-SECRETS
 - WALLET_PRIVATE_KEY:
@@ -93,19 +106,23 @@ prices:
     storage:
       shell: export WALLET_PRIVATE_KEY=0x... in ~/.zshrc or ~/.bashrc
       claude-code: pass via --wallet-key argument in claude mcp add command
-    warning: never commit the raw key to git
+    warning: never commit the raw key to git; never set on Cloud Run
+- IMAGCON_PROFILE_TOKEN:
+    description: Optional override for X-Imagcon-Token header on subsequent x402 calls
+    format: tok_... string from Imagcon first-payment response
+    note: Normally stored in session memory automatically after first paid call
 
 ### CLIENT-CONFIGS
 
 #### Claude Code (CLI)
-claude mcp add stackapps -- uvx --from https://stackapps.app/downloads/stackapps_mcp-0.1.1-py3-none-any.whl stackapps-mcp --wallet-key 0x...
+claude mcp add stackapps-suite -- uvx --from https://stackapps.app/downloads/stackapps_suite_mcp-0.1.3-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 
 #### Claude Code / Cursor / Windsurf / Cline (JSON)
 {
   "mcpServers": {
-    "stackapps": {
+    "stackapps-suite": {
       "command": "uvx",
-      "args": ["--from", "https://stackapps.app/downloads/stackapps_mcp-0.1.1-py3-none-any.whl", "stackapps-mcp", "--wallet-key", "0x..."]
+      "args": ["--from", "https://stackapps.app/downloads/stackapps_suite_mcp-0.1.3-py3-none-any.whl", "stackapps-suite-mcp", "--wallet-key", "0x..."]
     }
   }
 }
@@ -249,25 +266,43 @@ source: imagcon.app/routes/x402/generate-splash-screens
 ### MCP
 tool: generate_splash_screens
 
+## CAPABILITY: get-wallet-profile
+description: Look up the Imagcon wallet profile for the configured wallet address.
+  Use before prompting the user to activate — shows temp vs permanent status.
+input: []
+output:
+  - type: string
+    description: Profile status and optional display name.
+auth-required: false
+payment: free (no x402 charge)
+source: imagcon.app/routes/x402/profile/{wallet}
+
+### MCP
+tool: get_wallet_profile
+
 ## CAPABILITY: setup-wallet-profile
 description: Activate a permanent Imagcon account linked to your wallet. Call this
-  after the first x402 payment using the profile_token returned in the tool result.
-  Permanent accounts keep payment history indefinitely. Without activation the
-  temp account auto-deletes after 60 days (paper plan).
+  after the first x402 payment. profile_token is stored in session memory after the
+  first paid call; pass explicitly from secure storage if needed. Permanent accounts
+  keep payment history indefinitely. Without activation the temp account auto-deletes
+  after 60 days (paper plan).
 input:
-  - name: profile_token
-    type: string
-    required: true
-    description: The tok_... token returned in the tool result after the first
-      x402 payment from this wallet.
-  - name: wallet_address
-    type: string
-    required: true
-    description: Derived from WALLET_PRIVATE_KEY by stackapps-mcp (not an agent input).
   - name: name
     type: string
     required: true
     description: Display name for the profile (person or business name).
+  - name: terms_confirmed
+    type: boolean
+    required: true
+    description: Must be true only after the human has read https://imagcon.app/terms-of-service and agreed.
+  - name: profile_token
+    type: string
+    required: false
+    description: tok_... token from first x402 payment. Defaults to session token if omitted.
+  - name: wallet_address
+    type: string
+    required: true
+    description: Derived from WALLET_PRIVATE_KEY by stackapps-suite-mcp (not an agent input).
   - name: company_name
     type: string
     required: false
@@ -289,7 +324,7 @@ tool: setup_wallet_profile
 ## SUITE
 note: This gateway grows as member apps ship x402 endpoints. Each new capability
   will appear in ## MCP TOOLS above and as a ## CAPABILITY block below.
-  The install command and server URL do not change — agents with stackapps-mcp
+  The install command and server URL do not change — agents with stackapps-suite-mcp
   already installed receive new tools automatically on next connect.
 members:
   - imagcon.app — PWA icons, splash screens, AI image generation (live)

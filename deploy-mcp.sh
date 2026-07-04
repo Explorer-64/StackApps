@@ -5,6 +5,10 @@ PROJECT_ID="stackapps-dcab1"
 SERVICE_NAME="stackapps-mcp"
 REGION="us-central1"
 
+# Cloud Run serves blueprint discovery only (discovery_only=True in http_main.py).
+# NEVER set WALLET_PRIVATE_KEY on this service — a funded wallet on a public
+# endpoint would be a drain vector.
+
 echo "Building and deploying $SERVICE_NAME to Cloud Run..."
 
 cd "$(dirname "$0")/stackapps-mcp"

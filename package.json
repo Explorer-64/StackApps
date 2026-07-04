@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
-    "build:agents": "npm run build -w stackapps-cli && npm run build -w stackapps-mcp",
+    "build:agents": "npm run build -w stackapps-cli && npm run build -w stackapps-readiness-mcp",
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:push": "drizzle-kit push"

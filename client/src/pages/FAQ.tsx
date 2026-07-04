@@ -45,7 +45,7 @@ export default function FAQ() {
     {
       question: 'Does StackApps ship its own CLI or MCP for the scan?',
       answer:
-        'Yes. The same public scan you get on https://stackapps.app/scan is available from a first-party CLI (`stackapps-cli`, command `stackapps scan <url>`) and a stdio MCP server (`stackapps-mcp`, tool `readiness_scan` with a full https URL). Source lives under `packages/stackapps-cli` and `packages/stackapps-mcp` in the GitHub repo; install paths and clone/local build notes are in https://stackapps.app/llms.txt under “First-party CLI & MCP”. After npm publish, `npx stackapps-cli` / `npx stackapps-mcp` work like any other Node tools.',
+        'Yes. The same public scan you get on https://stackapps.app/scan is available from a first-party CLI (`stackapps-cli`, command `stackapps scan <url>`) and a stdio MCP server (`stackapps-readiness-mcp`, tool `readiness_scan` with a full https URL). Source lives under `packages/stackapps-cli` and `packages/stackapps-mcp` in the GitHub repo; install paths and clone/local build notes are in https://stackapps.app/llms.txt under “First-party CLI & MCP”. After npm publish, `npx stackapps-cli` / `npx stackapps-readiness-mcp` work like any other Node tools. Paid x402 suite tools (Imagcon icons/splash) use a separate Python gateway — see https://mcp.stackapps.app/blueprint.txt.',
     },
     {
       question: 'What are Bronze, Silver, and Gold?',

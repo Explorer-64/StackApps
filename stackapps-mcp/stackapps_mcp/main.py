@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 
-from stackapps_mcp.client import ImagconX402Client
+from stackapps_mcp.imagcon import ImagconX402Client
 from stackapps_mcp.server import mcp, set_client
 
 
@@ -13,7 +13,7 @@ def _resolve_wallet_key(cli_key: str | None) -> str:
     if not key:
         print(
             "Missing wallet private key. Set WALLET_PRIVATE_KEY or pass --wallet-key.\n"
-            "You need an EVM wallet with USDC on Base Sepolia.",
+            "You need an EVM wallet with USDC on Base mainnet (eip155:8453).",
             file=sys.stderr,
         )
         raise SystemExit(2)
@@ -23,7 +23,7 @@ def _resolve_wallet_key(cli_key: str | None) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="stackapps-mcp")
+    parser = argparse.ArgumentParser(prog="stackapps-suite-mcp")
     parser.add_argument("--wallet-key", default=None)
     parser.add_argument("--network", default="eip155:8453")
     args, remaining = parser.parse_known_args()

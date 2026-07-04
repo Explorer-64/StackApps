@@ -30,7 +30,7 @@ async function postPublicScan(url: string): Promise<unknown> {
 }
 
 const server = new McpServer(
-  { name: "stackapps", version: "0.1.0" },
+  { name: "stackapps-readiness", version: "0.1.0" },
   {
     instructions:
       "StackApps exposes the same public HTTPS readiness scan as stackapps.app/scan. Use tool readiness_scan with a full https URL. Server-side rules apply (e.g. one stored free scan per hostname).",
