@@ -21,4 +21,4 @@ __pycache__
 **/*.firebase.json
 **/*firebase-adminsdk*.json
 **/*service-account*.json
-**/*serviceAccount*.json
+**/*serviceAccount*.jsonfirebase-debug.log
