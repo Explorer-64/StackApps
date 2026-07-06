@@ -4,11 +4,23 @@ build-backend = "hatchling.build"
 
 [project]
 name = "stackapps-suite-mcp"
-version = "0.1.4"
-description = "MCP gateway for StackApps suite tools (Imagcon x402 PWA assets)"
+version = "0.1.5"
+description = "MCP gateway for the StackApps tool suite — pay per call in USDC via x402, no account required"
+readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Abe Reimer" }]
+keywords = ["mcp", "x402", "usdc", "pwa-icons", "stackapps", "agent-payments"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+]
+
 dependencies = [
     "eth-account>=0.13.0",
     "httpx>=0.27.0",
@@ -16,6 +28,11 @@ dependencies = [
     "uvicorn>=0.30.0",
     "x402[evm,clients]>=2.0.0",
 ]
+
+[project.urls]
+Homepage = "https://stackapps.app"
+Source = "https://github.com/Explorer-64/StackApps"
+Blueprint = "https://mcp.stackapps.app/blueprint.txt"
 
 [project.scripts]
 stackapps-suite-mcp = "stackapps_mcp.__main__:main"

@@ -18,9 +18,6 @@ mcp = FastMCP("stackapps-suite-mcp", stateless_http=True)
 
 _client: ImagconX402Client | None = None
 _blueprint_text = (Path(__file__).parent / "blueprint.txt").read_text(encoding="utf-8")
-_WHEEL_URL = (
-    "https://stackapps.app/downloads/stackapps_suite_mcp-0.1.4-py3-none-any.whl"
-)
 
 
 def set_client(client: ImagconX402Client) -> None:
@@ -206,7 +203,7 @@ class _SSEGuard(BaseHTTPMiddleware):
             return PlainTextResponse(
                 "SSE transport is not supported on this server.\n"
                 "Install the local stdio package instead:\n"
-                f"  uvx --from {_WHEEL_URL} stackapps-suite-mcp --wallet-key 0x...",
+                "  uvx stackapps-suite-mcp --wallet-key 0x...",
                 status_code=405,
             )
         return await call_next(request)
