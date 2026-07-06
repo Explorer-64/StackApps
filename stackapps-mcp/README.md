@@ -1,6 +1,6 @@
 # stackapps-suite-mcp
 
-mcp-name: io.github.explorer-64/stackapps-suite-mcp
+mcp-name: io.github.Explorer-64/stackapps-suite-mcp
 
 One MCP server for the whole [StackApps](https://stackapps.app) tool suite.
 Pay per call in USDC on Base mainnet via [x402](https://www.x402.org/) — no

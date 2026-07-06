@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 COPY stackapps_mcp ./stackapps_mcp
 
 RUN pip install --no-cache-dir uv \
