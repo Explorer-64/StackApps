@@ -1,14 +1,15 @@
 # BLUEPRINT: StackApps MCP Gateway [x402]
-# Version: 1.3.0
+# Version: 1.4.0
 # URL: https://mcp.stackapps.app
-# Updated: 2026-07-04
+# Updated: 2026-07-11
 
 ## IDENTITY
 name: StackApps MCP Gateway
 description: Unified x402 gateway for the StackApps tool suite. Pay per call in USDC
   on Base mainnet — no account required to start; first x402 payment may issue a temp
-  API key (first payment only). Each member app (Imagcon today; StackBill, StackSlip,
-  and others as they ship) contributes tools here. One server, one install, the full suite.
+  API key (first payment only). Member apps live today: Imagcon (icons, splash, AI
+  images, resize, x402 validation) and StackBill (invoice PDFs). More as they ship.
+  One server, one install, the full suite.
 category: developer-tools
 contact: support@stackapps.app
 
@@ -22,6 +23,9 @@ capabilities:
   - generate-pwa-icons: Text prompt → AI-generated PWA icon set — $0.295 USDC
   - generate-image: Text prompt → AI-generated source image (image_key + preview URL) — $0.195 USDC
   - generate-splash-screens: Text prompt → AI-generated 16 iOS/iPad splash screens — $0.295 USDC
+  - resize-image: Resize image to exact dimensions or social presets (OG, Twitter, Instagram...) — $0.02 USDC
+  - validate-x402-endpoint: Pre-flight check any x402 endpoint with a real signed probe — $0.01 USDC
+  - create-invoice: JSON in → professional invoice PDF out, server-side totals — $0.10 USDC
   - get-wallet-profile: Look up temp vs permanent wallet profile — free
   - setup-wallet-profile: Activate permanent account from first-payment profile token — free
 
@@ -65,7 +69,7 @@ http-transport: discovery only — https://mcp.stackapps.app serves blueprint.tx
   require local stdio with WALLET_PRIVATE_KEY. Do not use HTTP MCP on Cloud Run.
 install: claude mcp add stackapps-suite -- uvx stackapps-suite-mcp --wallet-key 0x...
 package: stackapps-suite-mcp on PyPI
-fallback-wheel: https://stackapps.app/downloads/stackapps_suite_mcp-0.1.5-py3-none-any.whl
+fallback-wheel: https://stackapps.app/downloads/stackapps_suite_mcp-0.1.7-py3-none-any.whl
 requirements: uv/uvx installed (https://docs.astral.sh/uv/). Python 3.11–3.12.
   EVM wallet private key. USDC on Base mainnet in that wallet.
 
@@ -82,6 +86,9 @@ create_splash_screens_from_image | image_path, background_color, output_dir | 16
 generate_pwa_icons | description, output_dir | AI-generate PWA icon set from text prompt ($0.295 USDC) | source: imagcon.app
 generate_image | description | AI-generate source image, returns image_key + preview_url ($0.195 USDC) | source: imagcon.app
 generate_splash_screens | description, background_color, output_dir | AI-generate 16 iOS/iPad splash screens ($0.295 USDC) | source: imagcon.app
+resize_image | image_path, output_path, preset, width, height, mode, focal, background_color, output_format, quality | Resize local image to exact dimensions or social preset ($0.02 USDC) | source: imagcon.app
+validate_x402_endpoint | url, body | Real-payment probe of any x402 endpoint: facilitator verdict + lint + discovery ($0.01 USDC) | source: imagcon.app
+create_invoice | recipient_name, recipient_address, line_items, output_path, sender_name, sender_address, invoice_number, due_date, tax_rate, notes, template | Professional invoice PDF, server-side totals, per-wallet auto-numbering ($0.10 USDC) | source: stackbill.app
 get_wallet_profile | (none) | Look up temp vs permanent wallet profile (free) | source: imagcon.app
 setup_wallet_profile | name, terms_confirmed, profile_token, company_name, tax_id | Activate permanent account from first-payment profile token (free) | source: imagcon.app
 
@@ -94,7 +101,9 @@ flow: Each tool call makes an HTTP request to the source app's x402 endpoint. Th
   wallet, and retries. Settlement is on-chain; funds go directly to the source app's
   wallet. StackApps takes no cut.
 prices:
-  - $0.10 USDC: create_pwa_icons_from_image, create_splash_screens_from_image
+  - $0.01 USDC: validate_x402_endpoint
+  - $0.02 USDC: resize_image
+  - $0.10 USDC: create_pwa_icons_from_image, create_splash_screens_from_image, create_invoice
   - $0.195 USDC: generate_image
   - $0.295 USDC: generate_pwa_icons, generate_splash_screens
   - free: get_wallet_profile, setup_wallet_profile (no x402 charge)
@@ -271,6 +280,146 @@ source: imagcon.app/routes/x402/generate-splash-screens
 ### MCP
 tool: generate_splash_screens
 
+## CAPABILITY: resize-image
+description: Resize a local image to exact dimensions or a social-media preset —
+  Open Graph (1200x630), Twitter card, YouTube thumbnail, Instagram square/portrait/
+  story, LinkedIn post, Twitter header, GitHub social. Fit modes avoid distortion:
+  cover (focal-point crop), contain (padded), blur (letterbox fill — best for OG),
+  stretch. Powered by Imagcon (imagcon.app).
+input:
+  - name: image_path
+    type: string
+    required: true
+    description: Absolute path to a PNG, JPEG, or WebP file on the local machine.
+  - name: output_path
+    type: string
+    required: false
+    default: ./resized.png
+    description: Where the resized image is written.
+  - name: preset
+    type: string
+    required: false
+    description: Social preset (og, twitter-card, youtube-thumbnail, instagram-square,
+      instagram-portrait, instagram-story, linkedin-post, twitter-header, github-social).
+      Wins over width/height when provided.
+  - name: width
+    type: number
+    required: false
+    description: Target width in pixels (16-4096). Required with height when preset omitted.
+  - name: height
+    type: number
+    required: false
+    description: Target height in pixels (16-4096). Required with width when preset omitted.
+  - name: mode
+    type: string
+    required: false
+    default: cover
+    description: Fit mode — cover, contain, blur, or stretch.
+output:
+  - type: file
+    description: Resized image written to output_path (png/jpeg/webp).
+auth-required: false
+payment: $0.02 USDC per call (Base mainnet, x402)
+source: imagcon.app/routes/x402/resize-image
+
+### MCP
+tool: resize_image
+
+## CAPABILITY: validate-x402-endpoint
+description: Pre-flight due diligence on any third-party x402 endpoint before spending
+  real money on it. Sends a REAL signed payment from a fresh, unfunded, single-use
+  wallet (by construction no funds can move) and returns the facilitator's verdict
+  (healthy / broken / payment-ignored / not-x402 / unsupported-network), the decoded
+  402 challenge, lint findings for silent payment-killers (e.g. resource descriptions
+  over CDP's ~512-char cap), and a discovery report. Powered by Imagcon (imagcon.app).
+input:
+  - name: url
+    type: string
+    required: true
+    description: The https x402 endpoint to probe. Must be publicly reachable on Base mainnet.
+  - name: body
+    type: object
+    required: false
+    description: JSON body the target endpoint expects on POST (default {}).
+output:
+  - type: json
+    description: Validation report — verdict, challenge summary, lint, facilitator
+      error verbatim if any, discovery report.
+auth-required: false
+payment: $0.01 USDC per call (Base mainnet, x402)
+source: imagcon.app/routes/x402/validate
+
+### MCP
+tool: validate_x402_endpoint
+
+## CAPABILITY: create-invoice
+description: Generate a finished, professional invoice PDF from JSON — recipient and
+  line items in, ready-to-send application/pdf out. Totals and tax are computed
+  server-side so the numbers always add up. Templates: standard, legal (billing
+  statement with matter dates), creative (service/fee layout). First payment
+  auto-creates a wallet account (one-time X-StackApps-Token + API key in response
+  headers, held in session memory); returning callers may omit invoice_number
+  (sequential per-wallet numbering, e.g. INV-0001) and activated profiles may omit
+  sender. Anonymous callers send everything, nothing is stored. USD only.
+  Powered by StackBill (stackbill.app).
+input:
+  - name: recipient_name
+    type: string
+    required: true
+    description: Who the invoice is billed to.
+  - name: recipient_address
+    type: string
+    required: true
+    description: Recipient postal address.
+  - name: line_items
+    type: array
+    required: true
+    description: At least one item, each {description, quantity, unitPrice}.
+  - name: output_path
+    type: string
+    required: false
+    default: ./invoice.pdf
+    description: Where the PDF is written.
+  - name: sender_name
+    type: string
+    required: false
+    description: Who the invoice is from. Required for new/anonymous wallets.
+  - name: sender_address
+    type: string
+    required: false
+    description: Sender postal address. Required for new/anonymous wallets.
+  - name: invoice_number
+    type: string
+    required: false
+    description: Printed on the PDF. Omit on repeat calls for per-wallet auto-numbering.
+  - name: due_date
+    type: string
+    required: false
+    description: Due date, YYYY-MM-DD.
+  - name: tax_rate
+    type: number
+    required: false
+    description: Tax percent applied to the subtotal (e.g. 7.5).
+  - name: notes
+    type: string
+    required: false
+    description: Notes printed at the bottom of the invoice.
+  - name: template
+    type: string
+    required: false
+    default: standard
+    description: PDF layout — standard, legal, or creative.
+output:
+  - type: file
+    description: Invoice PDF written to output_path. Auto-assigned invoice number
+      reported in the tool result when applicable.
+auth-required: false
+payment: $0.10 USDC per call (Base mainnet, x402)
+source: stackbill.app/routes/x402/invoice-from-data
+
+### MCP
+tool: create_invoice
+
 ## CAPABILITY: get-wallet-profile
 description: Look up the Imagcon wallet profile for the configured wallet address.
   Use before prompting the user to activate — shows temp vs permanent status.
@@ -332,6 +481,7 @@ note: This gateway grows as member apps ship x402 endpoints. Each new capability
   The install command and server URL do not change — agents with stackapps-suite-mcp
   already installed receive new tools automatically on next connect.
 members:
-  - imagcon.app — PWA icons, splash screens, AI image generation (live)
-  - stackbill.app — invoicing (planned)
+  - imagcon.app — PWA icons, splash screens, AI image generation, image resize,
+    x402 endpoint validation (live)
+  - stackbill.app — invoice PDF generation with per-wallet accounts (live)
   - stackslip.app — packing slips (planned)

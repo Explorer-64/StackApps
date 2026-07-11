@@ -5,7 +5,9 @@ import os
 import sys
 
 from stackapps_mcp.imagcon import ImagconX402Client
-from stackapps_mcp.server import mcp, set_client
+from stackapps_mcp.server import mcp, set_client, set_stackbill
+from stackapps_mcp.stackbill import StackBillX402Client
+from stackapps_mcp.x402_http import SuiteX402Http
 
 
 def _resolve_wallet_key(cli_key: str | None) -> str:
@@ -30,9 +32,10 @@ def main() -> None:
     sys.argv = [sys.argv[0], *remaining]
 
     key = _resolve_wallet_key(args.wallet_key)
-    client = ImagconX402Client(key, args.network)
-    set_client(client)
+    engine = SuiteX402Http(key, args.network)
+    set_client(ImagconX402Client(engine))
+    set_stackbill(StackBillX402Client(engine))
     try:
         mcp.run()
     finally:
-        client.close()
+        engine.close()

@@ -21,11 +21,13 @@ class ImagconX402Client:
     GENERATE_IMAGE_URL = "https://imagcon.app/routes/x402/generate-image"
     GENERATE_ICONS_AI_URL = "https://imagcon.app/routes/x402/generate-pwa-icons"
     GENERATE_SPLASH_AI_URL = "https://imagcon.app/routes/x402/generate-splash-screens"
+    RESIZE_URL = "https://imagcon.app/routes/x402/resize-image"
+    VALIDATE_URL = "https://imagcon.app/routes/x402/validate"
     PROFILE_ACTIVATE_URL = "https://imagcon.app/routes/x402/profile/activate"
     PROFILE_LOOKUP_URL = "https://imagcon.app/routes/x402/profile"
 
-    def __init__(self, private_key: str, network: str = "eip155:8453") -> None:
-        self._x402 = SuiteX402Http(private_key, network)
+    def __init__(self, x402: SuiteX402Http) -> None:
+        self._x402 = x402
         env_token = (os.environ.get("IMAGCON_PROFILE_TOKEN") or "").strip()
         self._profile_token: str | None = env_token or None
 
@@ -100,6 +102,38 @@ class ImagconX402Client:
             json={"description": description, "background_color": background_color},
         )
 
+    def resize_image(
+        self,
+        image_bytes: bytes,
+        *,
+        preset: str | None = None,
+        width: int | None = None,
+        height: int | None = None,
+        mode: str | None = None,
+        focal: str | None = None,
+        background_color: str | None = None,
+        output_format: str | None = None,
+        quality: int | None = None,
+    ) -> tuple[bytes, dict]:
+        import base64 as _b64
+
+        payload: dict = {"image_base64": _b64.b64encode(image_bytes).decode()}
+        for key, value in (
+            ("preset", preset), ("width", width), ("height", height), ("mode", mode),
+            ("focal", focal), ("background_color", background_color),
+            ("format", output_format), ("quality", quality),
+        ):
+            if value is not None:
+                payload[key] = value
+        return self._call(self.RESIZE_URL, json=payload)
+
+    def validate_x402(self, url: str, body: dict | None = None) -> tuple[dict, dict]:
+        payload: dict = {"url": url}
+        if body is not None:
+            payload["body"] = body
+        content, extra = self._call(self.VALIDATE_URL, json=payload)
+        return _json.loads(content), extra
+
     def get_wallet_profile(self) -> dict:
         response = self._x402.get(f"{self.PROFILE_LOOKUP_URL}/{self.wallet_address}")
         return response.json()
@@ -130,6 +164,3 @@ class ImagconX402Client:
             body["tax_id"] = tax_id
         response = self._x402.post(self.PROFILE_ACTIVATE_URL, json=body)
         return response.json()
-
-    def close(self) -> None:
-        self._x402.close()

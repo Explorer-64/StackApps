@@ -13,10 +13,12 @@ from starlette.responses import PlainTextResponse, Response
 from starlette.routing import Mount, Route
 
 from stackapps_mcp.imagcon import ImagconX402Client
+from stackapps_mcp.stackbill import StackBillX402Client
 
 mcp = FastMCP("stackapps-suite-mcp", stateless_http=True)
 
 _client: ImagconX402Client | None = None
+_stackbill: StackBillX402Client | None = None
 _blueprint_text = (Path(__file__).parent / "blueprint.txt").read_text(encoding="utf-8")
 
 
@@ -25,10 +27,21 @@ def set_client(client: ImagconX402Client) -> None:
     _client = client
 
 
+def set_stackbill(client: StackBillX402Client) -> None:
+    global _stackbill
+    _stackbill = client
+
+
 def _require_client() -> ImagconX402Client:
     if _client is None:
         raise RuntimeError("Imagcon x402 client is not configured")
     return _client
+
+
+def _require_stackbill() -> StackBillX402Client:
+    if _stackbill is None:
+        raise RuntimeError("StackBill x402 client is not configured")
+    return _stackbill
 
 
 def _profile_note(extra: dict) -> str:
@@ -144,6 +157,80 @@ def generate_splash_screens(
         _safe_extractall(zf, out)
 
     return f"Generated {count} files in {out.resolve()}." + _profile_note(extra)
+
+
+@mcp.tool()
+def resize_image(
+    image_path: str,
+    output_path: str = "./resized.png",
+    preset: str | None = None,
+    width: int | None = None,
+    height: int | None = None,
+    mode: str = "cover",
+    focal: str = "center",
+    background_color: str = "#ffffff",
+    output_format: str = "png",
+    quality: int = 90,
+) -> str:
+    """Resize a local image to exact dimensions or a social preset via the Imagcon x402 endpoint. Costs $0.02 USDC. Presets: og, twitter-card, youtube-thumbnail, instagram-square, instagram-portrait, instagram-story, linkedin-post, twitter-header, github-social (preset wins over width/height). Modes: cover, contain, blur (best for OG images), stretch."""
+    image_bytes = Path(image_path).read_bytes()
+    result_bytes, extra = _require_client().resize_image(
+        image_bytes, preset=preset, width=width, height=height, mode=mode,
+        focal=focal, background_color=background_color,
+        output_format=output_format, quality=quality,
+    )
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(result_bytes)
+    return f"Resized image written to {out.resolve()} ({len(result_bytes)} bytes)." + _profile_note(extra)
+
+
+@mcp.tool()
+def validate_x402_endpoint(url: str, body: dict | None = None) -> str:
+    """Validate any third-party x402 endpoint before paying it: sends a REAL signed probe from a fresh unfunded wallet (no funds can move) and returns the facilitator's verdict (healthy/broken/payment-ignored/...), decoded challenge, lint findings, and discovery report. Costs $0.01 USDC via Imagcon. Use for pre-flight due diligence on unfamiliar paid endpoints. body = the JSON the target expects (default {})."""
+    import json as _json
+
+    report, _ = _require_client().validate_x402(url, body)
+    return _json.dumps(report, indent=2)
+
+
+@mcp.tool()
+def create_invoice(
+    recipient_name: str,
+    recipient_address: str,
+    line_items: list[dict],
+    output_path: str = "./invoice.pdf",
+    sender_name: str | None = None,
+    sender_address: str | None = None,
+    invoice_number: str | None = None,
+    due_date: str | None = None,
+    tax_rate: float | None = None,
+    notes: str | None = None,
+    template: str | None = None,
+) -> str:
+    """Generate a professional invoice PDF via the StackBill x402 endpoint. Costs $0.10 USDC. line_items: [{"description": str, "quantity": number, "unitPrice": number}] — totals and tax are computed server-side. Templates: standard (default), legal, creative. First payment auto-creates a wallet account; on later calls in the same session invoice_number may be omitted (auto-numbered per wallet, e.g. INV-0001). sender is required for new/anonymous wallets."""
+    sender = None
+    if sender_name and sender_address:
+        sender = {"name": sender_name, "address": sender_address}
+    recipient = {"name": recipient_name, "address": recipient_address}
+    pdf_bytes, extra = _require_stackbill().create_invoice(
+        recipient=recipient, line_items=line_items, sender=sender,
+        invoice_number=invoice_number, due_date=due_date, tax_rate=tax_rate,
+        notes=notes, template=template,
+    )
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(pdf_bytes)
+    parts = [f"Invoice PDF written to {out.resolve()} ({len(pdf_bytes)} bytes)."]
+    if number := extra.get("invoice_number"):
+        parts.append(f"Invoice number: {number}.")
+    if extra.get("api_key_issued"):
+        parts.append(
+            "First payment: a StackBill wallet account was created and a one-time API key "
+            "was issued in the response headers (stored in session only, not shown here). "
+            "Future calls this session auto-number invoices."
+        )
+    return " ".join(parts)
 
 
 @mcp.tool()

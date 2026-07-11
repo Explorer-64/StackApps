@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "stackapps-suite-mcp"
-version = "0.1.6"
+version = "0.1.7"
 description = "MCP gateway for the StackApps tool suite — pay per call in USDC via x402, no account required"
 readme = "README.md"
 requires-python = ">=3.11"
