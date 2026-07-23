@@ -112,15 +112,21 @@ these rules apply:
    - `### MCP TOOLS` (one line: `tool | params | description ($price) | source: <domain>`)
    - a full `## CAPABILITY:` block with `### MCP tool:` sub-block
    - `## SUITE` members list (move the app from "planned" to "live")
-5. **Release:** bump `version` in `pyproject.toml`. Build the wheel
-   (`uv build`), copy it to `client/public/downloads/`, then update the wheel
-   filename in every place that references it:
-   - `_WHEEL_URL` in `stackapps_mcp/server.py`
-   - all install/config lines in `stackapps_mcp/blueprint.txt`
-   - `client/public/llms.txt` and the hub blueprint files if they mention it
-   Old wheel stays available for one release, then delete it.
+5. **Release:** bump `version` in `pyproject.toml`, then follow the release
+   checklist in `../AGENT-SURFACE-SPEC.md` (Pillar 1) — build the wheel,
+   attach it to a GitHub Release, update every install line to the new
+   release URL, and let the OIDC workflow re-publish the registry entry.
+   Do **not** use `client/public/downloads/` or a `_WHEEL_URL` constant —
+   that was the pre-2026-07-23 process and is superseded; PyPI is not the
+   distribution path either, for the same reason (see the spec's Pillar 1
+   "why"). `client/public/downloads/` still holds orphaned 0.1.5/0.1.7
+   wheels from the old process — leave them for now, don't resurrect the
+   pattern.
 6. **Deploy discovery:** run `./deploy-mcp.sh` from the repo root (deploys the
-   blueprint-only Cloud Run service; scale-to-zero, no secrets).
+   blueprint-only Cloud Run service; scale-to-zero, no secrets), then `curl
+   https://mcp.stackapps.app/blueprint.txt` and confirm the live version
+   string actually changed — do not assume the deploy succeeded from its
+   exit code alone.
 
 ---
 
@@ -145,10 +151,15 @@ these rules apply:
 
 | App | Status | Adapter |
 |---|---|---|
-| imagcon.app | live (5 paid + 2 free capabilities) | `stackapps_mcp/imagcon.py` |
-| stackbill.app | planned | — |
-| stackslip.app | planned | — |
+| imagcon.app | live (7 paid + 4 free capabilities) | `stackapps_mcp/imagcon.py` |
+| stackbill.app | live (1 paid + 1 free capability) | `stackapps_mcp/stackbill.py` |
+| dicta-notes.com | live (2 paid + 3 free capabilities) | `stackapps_mcp/dicta.py` |
+| stackslip.app | demoted (packing-slip x402 route showed ~$0 measured demand in the 2026-07-18 demand scan) | — |
 
 Candidate future members (shipped apps, no x402 routes yet): stackspent.app,
 stacktax.app, stackvideo.app, stackagent.app, stacklaunch.app, calypterv.com,
-easyhomeflow.com, dicta-notes.com.
+easyhomeflow.com.
+
+Note (2026-07-23): this table and the blueprint's own capability list can
+drift from the real tool set in `server.py` — see `../AGENT-SURFACE-SPEC.md`
+Pillar 3 for why that matters and the standing rule to keep them in sync.
