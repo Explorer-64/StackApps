@@ -48,7 +48,9 @@ class SuiteX402Http:
         x402_client.register_policy(_suite_pay_to_only)
         x402_client.register_policy(max_amount(_max_usdc_units()))
         self._x402_http = x402HTTPClientSync(x402_client)
-        self._http = httpx.Client(timeout=300.0)
+        # 3600s to cover Dicta-Notes' long-form transcription tier, which can take
+        # 15-30 min synchronously for a 2-hour recording (its own max_timeout_seconds is 3600).
+        self._http = httpx.Client(timeout=3600.0)
 
     @property
     def wallet_address(self) -> str:
@@ -92,8 +94,14 @@ class SuiteX402Http:
             )
         return response
 
-    def get(self, url: str) -> httpx.Response:
-        response = self._http.get(url)
+    def get(
+        self,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+        params: dict[str, str | int] | None = None,
+    ) -> httpx.Response:
+        response = self._http.get(url, headers=headers, params=params)
         if response.status_code >= 400:
             raise RuntimeError(
                 f"x402 endpoint error {response.status_code} from {url}: {response.content[:200]}"

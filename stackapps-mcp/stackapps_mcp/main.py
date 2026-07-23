@@ -4,8 +4,9 @@ import argparse
 import os
 import sys
 
+from stackapps_mcp.dicta import DictaX402Client
 from stackapps_mcp.imagcon import ImagconX402Client
-from stackapps_mcp.server import mcp, set_client, set_stackbill
+from stackapps_mcp.server import mcp, set_client, set_dicta, set_stackbill
 from stackapps_mcp.stackbill import StackBillX402Client
 from stackapps_mcp.x402_http import SuiteX402Http
 
@@ -35,6 +36,7 @@ def main() -> None:
     engine = SuiteX402Http(key, args.network)
     set_client(ImagconX402Client(engine))
     set_stackbill(StackBillX402Client(engine))
+    set_dicta(DictaX402Client(engine))
     try:
         mcp.run()
     finally:

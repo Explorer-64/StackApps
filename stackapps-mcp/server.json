@@ -7,13 +7,13 @@
     "source": "github"
   },
   "websiteUrl": "https://stackapps.app",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "stackapps-suite-mcp",
-      "version": "0.1.7",
+      "version": "0.1.8",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

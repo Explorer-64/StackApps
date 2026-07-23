@@ -1,7 +1,7 @@
 # BLUEPRINT: StackApps MCP Gateway [x402]
-# Version: 1.4.0
+# Version: 1.5.0
 # URL: https://mcp.stackapps.app
-# Updated: 2026-07-11
+# Updated: 2026-07-14
 
 ## IDENTITY
 name: StackApps MCP Gateway
@@ -26,8 +26,9 @@ capabilities:
   - resize-image: Resize image to exact dimensions or social presets (OG, Twitter, Instagram...) — $0.02 USDC
   - validate-x402-endpoint: Pre-flight check any x402 endpoint with a real signed probe — $0.01 USDC
   - create-invoice: JSON in → professional invoice PDF out, server-side totals — $0.10 USDC
-  - get-wallet-profile: Look up temp vs permanent wallet profile — free
-  - setup-wallet-profile: Activate permanent account from first-payment profile token — free
+  - get-wallet-profile-imagcon: Look up temp vs permanent Imagcon wallet profile — free
+  - setup-wallet-profile-imagcon: Activate permanent Imagcon account from first-payment profile token — free
+  - setup-wallet-profile-stackbill: Activate permanent StackBill account from first-payment profile token — free
 
 ## AUTH
 provider: none
@@ -37,18 +38,24 @@ note: No Firebase account or API key required to start. Each tool call settles i
   configured wallet and retries automatically — no user interaction needed per call.
 
 ## WALLET PROFILE
-note: On every first payment from a new wallet, Imagcon auto-creates a 60-day
-  temporary account linked to that wallet address. No action required.
+note: Imagcon and StackBill each run their own independent wallet-profile system —
+  separate signature domains, separate token namespaces, separate activate endpoints.
+  A wallet activated on one is NOT activated on the other; call both setup tools if
+  you use both apps. On every first payment from a new wallet to either app, that
+  app auto-creates a 60-day temporary account linked to the wallet address. No
+  action required to receive the temp account — activation is opt-in.
+
+### Imagcon
 headers-on-first-payment:
   - X-Imagcon-Token: profile token (tok_...) — stored in session only, never echoed in tool text
   - X-Imagcon-Profile-Setup: activate URL (non-secret) — first payment only
   - X-Imagcon-Api-Key: Imagcon API key — first payment only; unlocks all 14 imagcon-mcp tools
 surfaced-by: stackapps-suite-mcp appends a non-secret opt-in message to tool results on
   first payment only (when X-Imagcon-Profile-Setup is present). Secrets stay in session
-  memory — never in chat logs. Example: "A 60-day temp account was created for your wallet.
-  To keep it permanently (free), call setup_wallet_profile with the profile token from
-  secure storage, or visit the activate URL. An Imagcon API key was issued — use imagcon-mcp
-  with that key (store securely, not in chat)."
+  memory — never in chat logs. Example: "A 60-day temp Imagcon account was created for
+  your wallet. To keep it permanently (free), call setup_wallet_profile_imagcon with the
+  profile token from secure storage, or visit the activate URL. An Imagcon API key was
+  issued — use imagcon-mcp with that key (store securely, not in chat)."
 activate-endpoint: POST https://imagcon.app/routes/x402/profile/activate
   body: { "profile_token": "tok_...", "wallet_address": "0x...", "name": "...",
     "terms_confirmed": true, "signature": "0x...", "message": "imagcon.app/profile/activate:tok_...:<unix_ts>" }
@@ -57,10 +64,36 @@ activate-endpoint: POST https://imagcon.app/routes/x402/profile/activate
     Server verifies the recovered address matches wallet_address (±300s window).
   terms: https://imagcon.app/terms-of-service
   note: stackapps-suite-mcp derives wallet_address from WALLET_PRIVATE_KEY automatically;
-    agents pass name and terms_confirmed to setup_wallet_profile. profile_token defaults
-    to the session token from the first paid call if omitted.
-paper-plan: If setup_wallet_profile is never called, the temp account auto-deletes
-  after 60 days. Next payment from same wallet starts a fresh 60-day window.
+    agents pass name and terms_confirmed to setup_wallet_profile_imagcon. profile_token
+    defaults to the session token from the first paid Imagcon call if omitted.
+paper-plan: If setup_wallet_profile_imagcon is never called, the temp account
+  auto-deletes after 60 days. Next payment from same wallet starts a fresh 60-day window.
+
+### StackBill
+headers-on-first-payment:
+  - X-StackApps-Token: profile token — stored in session only, never echoed in tool text
+  - X-StackApps-Api-Key: StackBill API key (sb_live_...) — first payment only
+  - X-Invoice-Number: auto-assigned invoice number for this call
+surfaced-by: stackapps-suite-mcp appends a non-secret opt-in message to create_invoice
+  results on first payment only. Example: "First payment: a StackBill wallet account
+  was created and a one-time API key was issued in the response headers (stored in
+  session only, not shown here). Future calls this session auto-number invoices. Call
+  setup_wallet_profile_stackbill to make this account permanent (free) instead of
+  letting it expire in 60 days."
+activate-endpoint: POST https://stackbill.app/routes/x402/profile/activate
+  body: { "profile_token": "tok_...", "wallet_address": "0x...", "name": "...",
+    "terms_confirmed": true, "signature": "0x...",
+    "message": "stackbill.app/profile/activate:tok_...:<unix_ts>" }
+  signature: EIP-191 personal_sign over the message — different domain than Imagcon's,
+    signatures are not interchangeable between the two apps. stackapps-suite-mcp signs
+    automatically; no agent input required.
+  optional-fields: company_name, tax_id, address (pre-fills sender details on future invoices)
+  terms: https://stackbill.app/terms-of-service
+  note: profile_token defaults to the session token from the first paid create_invoice
+    call if omitted.
+paper-plan: If setup_wallet_profile_stackbill is never called, the temp account
+  auto-deletes after 60 days. Next invoice payment from same wallet starts a fresh
+  60-day window and invoice numbering resets.
 
 ## MCP
 server: stackapps-suite-mcp
@@ -89,8 +122,9 @@ generate_splash_screens | description, background_color, output_dir | AI-generat
 resize_image | image_path, output_path, preset, width, height, mode, focal, background_color, output_format, quality | Resize local image to exact dimensions or social preset ($0.02 USDC) | source: imagcon.app
 validate_x402_endpoint | url, body | Real-payment probe of any x402 endpoint: facilitator verdict + lint + discovery ($0.01 USDC) | source: imagcon.app
 create_invoice | recipient_name, recipient_address, line_items, output_path, sender_name, sender_address, invoice_number, due_date, tax_rate, notes, template | Professional invoice PDF, server-side totals, per-wallet auto-numbering ($0.10 USDC) | source: stackbill.app
-get_wallet_profile | (none) | Look up temp vs permanent wallet profile (free) | source: imagcon.app
-setup_wallet_profile | name, terms_confirmed, profile_token, company_name, tax_id | Activate permanent account from first-payment profile token (free) | source: imagcon.app
+get_wallet_profile_imagcon | (none) | Look up temp vs permanent Imagcon wallet profile (free) | source: imagcon.app
+setup_wallet_profile_imagcon | name, terms_confirmed, profile_token, company_name, tax_id | Activate permanent Imagcon account from first-payment profile token (free) | source: imagcon.app
+setup_wallet_profile_stackbill | name, terms_confirmed, profile_token, company_name, tax_id, address | Activate permanent StackBill account from first-payment profile token (free) | source: stackbill.app
 
 ### PAYMENTS
 network: Base mainnet (eip155:8453)
@@ -106,7 +140,7 @@ prices:
   - $0.10 USDC: create_pwa_icons_from_image, create_splash_screens_from_image, create_invoice
   - $0.195 USDC: generate_image
   - $0.295 USDC: generate_pwa_icons, generate_splash_screens
-  - free: get_wallet_profile, setup_wallet_profile (no x402 charge)
+  - free: get_wallet_profile_imagcon, setup_wallet_profile_imagcon, setup_wallet_profile_stackbill (no x402 charge)
 client-safety: The server refuses to sign any payment challenge that does not pay
   the StackApps suite wallet, or that exceeds the per-call cap ($0.50 USDC by
   default; override with STACKAPPS_MAX_USD_PER_CALL). A compromised or spoofed
@@ -420,9 +454,10 @@ source: stackbill.app/routes/x402/invoice-from-data
 ### MCP
 tool: create_invoice
 
-## CAPABILITY: get-wallet-profile
+## CAPABILITY: get-wallet-profile-imagcon
 description: Look up the Imagcon wallet profile for the configured wallet address.
   Use before prompting the user to activate — shows temp vs permanent status.
+  Imagcon-only — StackBill has no equivalent lookup endpoint.
 input: []
 output:
   - type: string
@@ -432,14 +467,15 @@ payment: free (no x402 charge)
 source: imagcon.app/routes/x402/profile/{wallet}
 
 ### MCP
-tool: get_wallet_profile
+tool: get_wallet_profile_imagcon
 
-## CAPABILITY: setup-wallet-profile
+## CAPABILITY: setup-wallet-profile-imagcon
 description: Activate a permanent Imagcon account linked to your wallet. Call this
-  after the first x402 payment. profile_token is stored in session memory after the
-  first paid call; pass explicitly from secure storage if needed. Permanent accounts
-  keep payment history indefinitely. Without activation the temp account auto-deletes
-  after 60 days (paper plan).
+  after the first x402 payment to imagcon.app. profile_token is stored in session
+  memory after the first paid call; pass explicitly from secure storage if needed.
+  Permanent accounts keep payment history indefinitely. Without activation the temp
+  account auto-deletes after 60 days (paper plan). Separate account system from
+  StackBill — this does not activate a StackBill profile.
 input:
   - name: name
     type: string
@@ -452,7 +488,7 @@ input:
   - name: profile_token
     type: string
     required: false
-    description: tok_... token from first x402 payment. Defaults to session token if omitted.
+    description: tok_... token from first x402 payment to imagcon.app. Defaults to session token if omitted.
   - name: wallet_address
     type: string
     required: true
@@ -473,7 +509,55 @@ payment: free (no x402 charge)
 source: imagcon.app/routes/x402/profile/activate
 
 ### MCP
-tool: setup_wallet_profile
+tool: setup_wallet_profile_imagcon
+
+## CAPABILITY: setup-wallet-profile-stackbill
+description: Activate a permanent StackBill account linked to your wallet. Call this
+  after the first x402 payment to stackbill.app (create_invoice). profile_token is
+  stored in session memory after the first paid call; pass explicitly from secure
+  storage if needed. Permanent accounts keep per-wallet invoice numbering and can
+  pre-fill sender details on future invoices. Without activation the temp account
+  auto-deletes after 60 days (paper plan). Separate account system from Imagcon —
+  this does not activate an Imagcon profile. Signature uses a different message
+  domain than Imagcon's (stackbill.app/profile/activate:... vs imagcon.app/...).
+input:
+  - name: name
+    type: string
+    required: true
+    description: Display name for the profile (person or business name).
+  - name: terms_confirmed
+    type: boolean
+    required: true
+    description: Must be true only after the human has read https://stackbill.app/terms-of-service and agreed.
+  - name: profile_token
+    type: string
+    required: false
+    description: tok_... token from first x402 payment to stackbill.app. Defaults to session token if omitted.
+  - name: wallet_address
+    type: string
+    required: true
+    description: Derived from WALLET_PRIVATE_KEY by stackapps-suite-mcp (not an agent input).
+  - name: company_name
+    type: string
+    required: false
+    description: Optional business name.
+  - name: tax_id
+    type: string
+    required: false
+    description: Optional tax ID / VAT number.
+  - name: address
+    type: string
+    required: false
+    description: Optional business/mailing address — pre-fills sender address on future invoices.
+output:
+  - type: string
+    description: Confirmation message with account status.
+auth-required: false
+payment: free (no x402 charge)
+source: stackbill.app/routes/x402/profile/activate
+
+### MCP
+tool: setup_wallet_profile_stackbill
 
 ## SUITE
 note: This gateway grows as member apps ship x402 endpoints. Each new capability

@@ -22,6 +22,8 @@ class ImagconX402Client:
     GENERATE_ICONS_AI_URL = "https://imagcon.app/routes/x402/generate-pwa-icons"
     GENERATE_SPLASH_AI_URL = "https://imagcon.app/routes/x402/generate-splash-screens"
     RESIZE_URL = "https://imagcon.app/routes/x402/resize-image"
+    RESIZE_GENERATED_URL = "https://imagcon.app/routes/x402/resize-generated"
+    CHECK_ICON_URL = "https://imagcon.app/routes/x402/check-icon"
     VALIDATE_URL = "https://imagcon.app/routes/x402/validate"
     PROFILE_ACTIVATE_URL = "https://imagcon.app/routes/x402/profile/activate"
     PROFILE_LOOKUP_URL = "https://imagcon.app/routes/x402/profile"
@@ -30,6 +32,7 @@ class ImagconX402Client:
         self._x402 = x402
         env_token = (os.environ.get("IMAGCON_PROFILE_TOKEN") or "").strip()
         self._profile_token: str | None = env_token or None
+        self._api_key: str | None = None
 
     @property
     def wallet_address(self) -> str:
@@ -38,6 +41,11 @@ class ImagconX402Client:
     @property
     def profile_token(self) -> str | None:
         return self._profile_token
+
+    @property
+    def api_key(self) -> str | None:
+        """Imagcon API key issued on first payment, held in session memory only."""
+        return self._api_key
 
     def _profile_headers(self) -> dict[str, str]:
         if self._profile_token:
@@ -52,8 +60,9 @@ class ImagconX402Client:
         if setup_url := response.headers.get("x-imagcon-profile-setup"):
             extra["is_first_payment"] = True
             extra["profile_setup_url"] = setup_url
-        if response.headers.get("x-imagcon-api-key"):
+        if api_key := response.headers.get("x-imagcon-api-key"):
             extra["api_key_issued"] = True
+            self._api_key = api_key
         return extra
 
     def _call(
@@ -127,6 +136,38 @@ class ImagconX402Client:
                 payload[key] = value
         return self._call(self.RESIZE_URL, json=payload)
 
+    def resize_generated_image(
+        self,
+        image_key: str,
+        *,
+        preset: str | None = None,
+        width: int | None = None,
+        height: int | None = None,
+        mode: str | None = None,
+        focal: str | None = None,
+        background_color: str | None = None,
+        output_format: str | None = None,
+        quality: int | None = None,
+    ) -> tuple[bytes, dict]:
+        # Free — resizing an image already generated via generate_image is not
+        # gated behind a second x402 payment.
+        payload: dict = {"image_key": image_key}
+        for key, value in (
+            ("preset", preset), ("width", width), ("height", height), ("mode", mode),
+            ("focal", focal), ("background_color", background_color),
+            ("format", output_format), ("quality", quality),
+        ):
+            if value is not None:
+                payload[key] = value
+        return self._call(self.RESIZE_GENERATED_URL, json=payload)
+
+    def check_icon(self, image_bytes: bytes, target: str) -> tuple[dict, dict]:
+        import base64 as _b64
+
+        payload = {"image_base64": _b64.b64encode(image_bytes).decode(), "target": target}
+        content, extra = self._call(self.CHECK_ICON_URL, json=payload)
+        return _json.loads(content), extra
+
     def validate_x402(self, url: str, body: dict | None = None) -> tuple[dict, dict]:
         payload: dict = {"url": url}
         if body is not None:
@@ -146,9 +187,12 @@ class ImagconX402Client:
         terms_confirmed: bool,
         company_name: str | None = None,
         tax_id: str | None = None,
+        rotate_api_key: bool = False,
     ) -> dict:
         # Imagcon requires proof of wallet control: EIP-191 signature over
         # "imagcon.app/profile/activate:{token}:{unix_ts}", ±300s server window.
+        # rotate_api_key=True recovers a lost API key by wallet signature alone —
+        # no old key needed — for an already-permanent profile.
         message = f"imagcon.app/profile/activate:{profile_token}:{int(time.time())}"
         body: dict = {
             "profile_token": profile_token,
@@ -157,10 +201,14 @@ class ImagconX402Client:
             "terms_confirmed": terms_confirmed,
             "signature": self._x402.sign_message(message),
             "message": message,
+            "rotate_api_key": rotate_api_key,
         }
         if company_name:
             body["company_name"] = company_name
         if tax_id:
             body["tax_id"] = tax_id
         response = self._x402.post(self.PROFILE_ACTIVATE_URL, json=body)
-        return response.json()
+        result = response.json()
+        if api_key := result.get("api_key"):
+            self._api_key = api_key
+        return result
