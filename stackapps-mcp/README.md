@@ -9,8 +9,10 @@ ship) contributes tools; one install covers the suite.
 
 ## Install
 
+The package is self-hosted (not on PyPI). Install directly from the release wheel:
+
 ```bash
-claude mcp add stackapps-suite -- uvx stackapps-suite-mcp --wallet-key 0x...
+claude mcp add stackapps-suite -- uvx --from https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.8/stackapps_suite_mcp-0.1.8-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 ```
 
 Or in any MCP client config (Claude Desktop, Cursor, Windsurf, Cline):
@@ -20,7 +22,11 @@ Or in any MCP client config (Claude Desktop, Cursor, Windsurf, Cline):
   "mcpServers": {
     "stackapps-suite": {
       "command": "uvx",
-      "args": ["stackapps-suite-mcp"],
+      "args": [
+        "--from",
+        "https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.8/stackapps_suite_mcp-0.1.8-py3-none-any.whl",
+        "stackapps-suite-mcp"
+      ],
       "env": { "WALLET_PRIVATE_KEY": "0x..." }
     }
   }
