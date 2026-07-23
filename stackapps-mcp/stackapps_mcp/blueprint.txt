@@ -1,7 +1,7 @@
 # BLUEPRINT: StackApps MCP Gateway [x402]
-# Version: 1.5.0
+# Version: 1.5.1
 # URL: https://mcp.stackapps.app
-# Updated: 2026-07-14
+# Updated: 2026-07-23
 
 ## IDENTITY
 name: StackApps MCP Gateway
@@ -100,16 +100,16 @@ server: stackapps-suite-mcp
 preferred-transport: stdio
 http-transport: discovery only — https://mcp.stackapps.app serves blueprint.txt; paid tools
   require local stdio with WALLET_PRIVATE_KEY. Do not use HTTP MCP on Cloud Run.
-install: claude mcp add stackapps-suite -- uvx stackapps-suite-mcp --wallet-key 0x...
-package: stackapps-suite-mcp on PyPI
-fallback-wheel: https://stackapps.app/downloads/stackapps_suite_mcp-0.1.7-py3-none-any.whl
+install: claude mcp add stackapps-suite -- uvx --from https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.8/stackapps_suite_mcp-0.1.8-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
+package: self-hosted (not on PyPI) — GitHub Release asset, see install line above
 requirements: uv/uvx installed (https://docs.astral.sh/uv/). Python 3.11–3.12.
   EVM wallet private key. USDC on Base mainnet in that wallet.
 
 ### TRANSPORT (stdio)
-command: uvx stackapps-suite-mcp --wallet-key 0x...
+command: uvx --from https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.8/stackapps_suite_mcp-0.1.8-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 note: Runs as a local stdio process. Use WALLET_PRIVATE_KEY env var rather than
-  passing the key on the command line.
+  passing the key on the command line. The version segment in the release URL must
+  match a real tagged release — bump it on every version, it is not resolved for you.
 
 ### MCP TOOLS
 server: stackapps-suite-mcp
@@ -163,14 +163,19 @@ client-safety: The server refuses to sign any payment challenge that does not pa
 ### CLIENT-CONFIGS
 
 #### Claude Code (CLI)
-claude mcp add stackapps-suite -- uvx stackapps-suite-mcp --wallet-key 0x...
+claude mcp add stackapps-suite -- uvx --from https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.8/stackapps_suite_mcp-0.1.8-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 
 #### Claude Code / Cursor / Windsurf / Cline (JSON)
 {
   "mcpServers": {
     "stackapps-suite": {
       "command": "uvx",
-      "args": ["stackapps-suite-mcp", "--wallet-key", "0x..."]
+      "args": [
+        "--from",
+        "https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.8/stackapps_suite_mcp-0.1.8-py3-none-any.whl",
+        "stackapps-suite-mcp",
+        "--wallet-key", "0x..."
+      ]
     }
   }
 }
