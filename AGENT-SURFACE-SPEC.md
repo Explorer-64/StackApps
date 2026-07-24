@@ -1,16 +1,78 @@
 # Agent-Facing Surface Spec — MCP Distribution, x402, and Blueprint
 
-This is the standard for how every StackApps member app presents itself to
-automated consumers: MCP tooling, x402 paid endpoints, and blueprint.txt.
-Follow it for any new app, and bring an existing app into line with it the
-next time you touch that app's agent-facing surface.
+**Hand this file to any app and say “go.”** You do not need a second brief.
+The operator prompt is: bring this app’s agent-facing surfaces to the
+parity bar below, using live Imagcon as the worked example, and follow the
+three pillars in this document for distribution, x402, and blueprint
+discipline.
 
-Written 2026-07-23 after `stackapps-suite-mcp` spent 9+ days with fixed code
-that never reached PyPI, then a registry entry that actively lied about
-which PyPI version existed, then a live blueprint.txt that was 12 days
-stale — three separate instances of the same failure inside one package.
-Every rule below traces back to one of those three, or to the investigation
-that fixed them. Where a rule seems arbitrary, read the "Why" — it isn't.
+## Go — definition of done (parity bar)
+
+An app’s agent-facing surface is done only when **all** of these are true:
+
+1. **Code ↔ docs ↔ live URL agree.** Registered MCP tools (and paid x402
+   routes) match what `blueprint.txt` / capability files claim, match what
+   `llms.txt` (or equivalent agent digest) claims, and match what a stranger
+   gets when they `curl` the **live** URLs — not only what’s in the repo.
+2. **No orphan tools, no ghost tools.** Every real tool has a capability
+   (or an explicit, honest exception). Every named tool still exists.
+3. **Local vs hosted (if both exist) is explicit.** What each transport
+   omits, and whether `output_dir` extracts locally or the hosted path
+   returns a download URL, is stated where an agent would act on it.
+4. **Install/version claims are checkable and true** (Pillar 1).
+5. **x402 prices/descriptions/status match the blueprint** (Pillar 2) —
+   edit the canonical x402 docs, do not fork them here.
+6. **You verified the live artifacts yourself after deploy** (Pillar 3).
+
+Repo-correct and live-wrong is **not** done. FAQ / marketing blurbs that
+still teach the old matrix are **not** done.
+
+### Canonical worked example (public)
+
+Use Imagcon’s live surfaces as the reference implementation of this bar:
+
+- https://imagcon.app/blueprint.txt  
+  (also https://imagcon.app/.well-known/blueprint.txt)
+- https://imagcon.app/llms.txt  
+- Capability files under https://imagcon.app/blueprints/
+
+Imagcon is the flagship example: copy its *discipline* (inventory parity,
+transport honesty, deploy-then-curl), not its product features. If this
+app’s surfaces would confuse an agent that already understands Imagcon’s
+blueprint shape, they are not done.
+
+### Operator prompt (paste as-is)
+
+> Apply `AGENT-SURFACE-SPEC.md` end to end to this app. Bring MCP, x402,
+> and blueprint/`llms` (or equivalent) to the Go parity bar. Use live
+> Imagcon (`imagcon.app/blueprint.txt` + `llms.txt`) as the worked
+> example. Do not fork x402 rules — follow the pointers in Pillar 2.
+> Done means live URLs verified, not only a green local diff.
+
+---
+
+## Scope and reuse
+
+This is the standard for how StackApps member apps present themselves to
+automated consumers: MCP tooling, x402 paid endpoints, and blueprint.txt.
+It is written so the same file can be applied to any member app, and so
+the standard itself can be published or reused outside StackApps without
+a private oral tradition — the Go section, Imagcon URLs, and pillars are
+the complete handoff.
+
+StackApps-specific paths below (`JOINING-THE-GATEWAY.md`, suite-mcp
+workflows, `mcp.stackapps.app`) are **concrete instances** of the rules.
+When applying this outside StackApps, keep the rules and swap in that
+org’s canonical x402/gateway docs and deploy scripts.
+
+Written 2026-07-23 after `stackapps-suite-mcp` spent 9+ days with fixed
+code that never reached PyPI, then a registry entry that actively lied
+about which PyPI version existed, then a live blueprint.txt that was 12
+days stale — three separate instances of the same failure inside one
+package. A later Imagcon pass confirmed the same disease on a flagship
+app (repo honest, live stale; tool inventory drift across blueprint /
+`llms.txt` / FAQ). Every rule below traces back to those incidents.
+Where a rule seems arbitrary, read the "Why" — it isn't.
 
 This document covers pillars 1 and 3 below in full. Pillar 2 (x402) is
 already fully specified elsewhere and is summarized here only enough to
@@ -24,11 +86,12 @@ disease this spec exists to prevent.
 ## The one rule underneath all the others
 
 **A change is not done when the code is correct. It is done when the thing
-a stranger (human or agent) actually reaches — the live PyPI page, the live
-registry entry, the live blueprint.txt URL — reflects it, and you checked
-that URL yourself.** Every section below is this rule applied to one
-specific surface. If you're ever unsure whether something needs a step
-beyond "commit and push," assume it does and go verify the live artifact.
+a stranger (human or agent) actually reaches — the live package/install
+URL, the live registry entry, the live blueprint.txt URL — reflects it,
+and you checked that URL yourself.** Every section below is this rule
+applied to one specific surface. If you're ever unsure whether something
+needs a step beyond "commit and push," assume it does and go verify the
+live artifact.
 
 ---
 
@@ -133,7 +196,8 @@ Fully specified in:
   strategy).
 - `stackapps-mcp/JOINING-THE-GATEWAY.md` (the concrete checklist for wiring
   a new app's paid routes into the shared gateway — invariants, payTo pin,
-  per-call cap, signature rules).
+  per-call cap, signature rules). That file has its own **Go** section;
+  for a gateway join, hand **both** this spec and JOINING-THE-GATEWAY.md.
 
 The one thing worth restating here because it connects directly to Pillar 3:
 **every x402 route's price, description, and status must match what
@@ -200,19 +264,17 @@ rule being violated in the wild; fix it the next time this file is touched.
 
 ## Applying this to a new member app
 
-1. **x402 routes:** follow `JOINING-THE-GATEWAY.md` Part A end to end.
-2. **Gateway wiring:** follow `JOINING-THE-GATEWAY.md` Part B, but for the
-   release step (Part B, item 5), use this document's Pillar 1 release
-   checklist instead of the `client/public/downloads` wheel-copy process
-   described there — that process was superseded by the GitHub Release
-   pattern and is stale (flagged for cleanup; `client/public/downloads/`
-   in this repo still holds orphaned 0.1.5/0.1.7 wheels from when that was
-   the real path).
-3. **Blueprint:** update the app's own `blueprint.txt` (or the shared
-   gateway's, if the capability is x402/MCP) per Pillar 3, deploy it, and
-   verify the live URL before considering the app's agent-facing surface
-   done.
-4. **If the app ever wants its own standalone MCP server** (like
+Stop when the **Go — definition of done** checklist at the top is satisfied
+for this app (including live URL verification). The steps below are the
+StackApps wiring path; the parity bar is the exit criterion.
+
+1. **x402 + gateway join:** hand and follow `JOINING-THE-GATEWAY.md` (it
+   already points here for release/live-URL rules). Its Go checklist must
+   pass in addition to this file’s Go bar.
+2. **Blueprint:** update the app's own `blueprint.txt` (and the shared
+   gateway’s when tools are added there) per Pillar 3, deploy it, and
+   verify the live URL before considering the agent-facing surface done.
+3. **If the app ever wants its own standalone MCP server** (like
    `imagcon-mcp`, distinct from the shared gateway) rather than plugging
    into `stackapps-suite-mcp`: apply Pillar 1 to that package
    independently. It gets its own repo, its own releases, its own

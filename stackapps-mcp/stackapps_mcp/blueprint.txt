@@ -1,5 +1,5 @@
 # BLUEPRINT: StackApps MCP Gateway [x402]
-# Version: 1.5.1
+# Version: 1.6.0
 # URL: https://mcp.stackapps.app
 # Updated: 2026-07-23
 
@@ -8,8 +8,8 @@ name: StackApps MCP Gateway
 description: Unified x402 gateway for the StackApps tool suite. Pay per call in USDC
   on Base mainnet — no account required to start; first x402 payment may issue a temp
   API key (first payment only). Member apps live today: Imagcon (icons, splash, AI
-  images, resize, x402 validation) and StackBill (invoice PDFs). More as they ship.
-  One server, one install, the full suite.
+  images, resize, icon compliance, x402 validation), StackBill (invoice PDFs), and
+  Dicta-Notes (audio transcription). One server, one install, the full suite.
 category: developer-tools
 contact: support@stackapps.app
 
@@ -25,10 +25,19 @@ capabilities:
   - generate-splash-screens: Text prompt → AI-generated 16 iOS/iPad splash screens — $0.295 USDC
   - resize-image: Resize image to exact dimensions or social presets (OG, Twitter, Instagram...) — $0.02 USDC
   - validate-x402-endpoint: Pre-flight check any x402 endpoint with a real signed probe — $0.01 USDC
+  - resize-generated-image: Resize a prior generate_image result by image_key — free
+  - check-icon: Check icon compliance (maskable, android-adaptive, ios) — $0.01 USDC
   - create-invoice: JSON in → professional invoice PDF out, server-side totals — $0.10 USDC
+  - dicta-transcribe-audio: Short audio URL → diarized transcript JSON (up to 15 min) — $0.10 USDC
+  - dicta-transcribe-long-audio: Long-form audio URL → diarized transcript JSON (up to 2 hours) — $0.59 USDC
   - get-wallet-profile-imagcon: Look up temp vs permanent Imagcon wallet profile — free
   - setup-wallet-profile-imagcon: Activate permanent Imagcon account from first-payment profile token — free
   - setup-wallet-profile-stackbill: Activate permanent StackBill account from first-payment profile token — free
+  - get-wallet-profile-dicta: Look up temp vs permanent Dicta-Notes wallet profile — free
+  - setup-wallet-profile-dicta: Activate permanent Dicta-Notes account from first-payment profile token — free
+  - recover-wallet-profile-dicta: Recover lost Dicta-Notes API key by wallet signature — free
+  - list-dicta-transcripts: List stored transcripts for this wallet (requires Dicta API key) — free
+  - get-dicta-transcript: Fetch a stored transcript by id (requires Dicta API key) — free
 
 ## AUTH
 provider: none
@@ -38,12 +47,12 @@ note: No Firebase account or API key required to start. Each tool call settles i
   configured wallet and retries automatically — no user interaction needed per call.
 
 ## WALLET PROFILE
-note: Imagcon and StackBill each run their own independent wallet-profile system —
-  separate signature domains, separate token namespaces, separate activate endpoints.
-  A wallet activated on one is NOT activated on the other; call both setup tools if
-  you use both apps. On every first payment from a new wallet to either app, that
-  app auto-creates a 60-day temporary account linked to the wallet address. No
-  action required to receive the temp account — activation is opt-in.
+note: Imagcon, StackBill, and Dicta-Notes each run their own independent wallet-profile
+  system — separate signature domains, separate token namespaces, separate activate endpoints.
+  A wallet activated on one is NOT activated on the others; call each app's setup tool if
+  you use that app. On every first payment from a new wallet to any app, that app
+  auto-creates a 60-day temporary account linked to the wallet address. No action required
+  to receive the temp account — activation is opt-in.
 
 ### Imagcon
 headers-on-first-payment:
@@ -95,18 +104,47 @@ paper-plan: If setup_wallet_profile_stackbill is never called, the temp account
   auto-deletes after 60 days. Next invoice payment from same wallet starts a fresh
   60-day window and invoice numbering resets.
 
+### Dicta-Notes
+headers-on-first-payment:
+  - X-Dicta-Token: profile token (tok_...) — stored in session only, never echoed in tool text
+  - X-Dicta-Profile-Setup: activate URL (non-secret) — first payment only
+  - X-Dicta-Api-Key: Dicta-Notes API key (dn_live_...) — first payment only; unlocks list_dicta_transcripts / get_dicta_transcript
+surfaced-by: stackapps-suite-mcp appends a non-secret opt-in message to transcribe tool
+  results on first payment only (when X-Dicta-Profile-Setup is present). Secrets stay in
+  session memory — never in chat logs. Example: "A 60-day temp Dicta-Notes account was
+  created for your wallet. To keep it permanently (free), call setup_wallet_profile_dicta
+  with the profile token from secure storage, or visit the activate URL. A Dicta-Notes API
+  key was issued — needed for list_dicta_transcripts / get_dicta_transcript (store securely,
+  not in chat)."
+activate-endpoint: POST https://dicta-notes.com/routes/x402/profile/activate
+  body: { "profile_token": "tok_...", "wallet_address": "0x...", "name": "...",
+    "terms_confirmed": true, "signature": "0x...",
+    "message": "dicta-notes.com/profile/activate:tok_...:<unix_ts>" }
+  signature: EIP-191 personal_sign over the message — different domain from Imagcon's/
+    StackBill's; signatures are not interchangeable. stackapps-suite-mcp signs automatically;
+    no agent input required.
+  terms: https://dicta-notes.com/terms-of-service
+  note: profile_token defaults to the session token from the first paid Dicta transcribe call
+    if omitted. rotate_api_key=True on setup_wallet_profile_dicta issues a fresh key without
+    the old one. recover_wallet_profile_dicta also re-issues the API key by wallet signature alone.
+paper-plan: If setup_wallet_profile_dicta is never called, the temp account auto-deletes
+  after 60 days. Next transcribe payment from same wallet starts a fresh 60-day window.
+stored-transcripts: Pass store=True on dicta_transcribe_audio or dicta_transcribe_long_audio
+  to keep the transcript for 60 days. list_dicta_transcripts / get_dicta_transcript require
+  the Dicta API key from a prior paid call, setup, or recover.
+
 ## MCP
 server: stackapps-suite-mcp
 preferred-transport: stdio
 http-transport: discovery only — https://mcp.stackapps.app serves blueprint.txt; paid tools
   require local stdio with WALLET_PRIVATE_KEY. Do not use HTTP MCP on Cloud Run.
-install: claude mcp add stackapps-suite -- uvx --from https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.8/stackapps_suite_mcp-0.1.8-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
+install: claude mcp add stackapps-suite -- uvx --from https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.9/stackapps_suite_mcp-0.1.9-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 package: self-hosted (not on PyPI) — GitHub Release asset, see install line above
 requirements: uv/uvx installed (https://docs.astral.sh/uv/). Python 3.11–3.12.
   EVM wallet private key. USDC on Base mainnet in that wallet.
 
 ### TRANSPORT (stdio)
-command: uvx --from https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.8/stackapps_suite_mcp-0.1.8-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
+command: uvx --from https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.9/stackapps_suite_mcp-0.1.9-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 note: Runs as a local stdio process. Use WALLET_PRIVATE_KEY env var rather than
   passing the key on the command line. The version segment in the release URL must
   match a real tagged release — bump it on every version, it is not resolved for you.
@@ -121,10 +159,19 @@ generate_image | description | AI-generate source image, returns image_key + pre
 generate_splash_screens | description, background_color, output_dir | AI-generate 16 iOS/iPad splash screens ($0.295 USDC) | source: imagcon.app
 resize_image | image_path, output_path, preset, width, height, mode, focal, background_color, output_format, quality | Resize local image to exact dimensions or social preset ($0.02 USDC) | source: imagcon.app
 validate_x402_endpoint | url, body | Real-payment probe of any x402 endpoint: facilitator verdict + lint + discovery ($0.01 USDC) | source: imagcon.app
+resize_generated_image | image_key, output_path, preset, width, height, mode, focal, background_color, output_format, quality | Resize a prior generate_image result by image_key (free — no second payment) | source: imagcon.app
+check_icon | image_path, target | Check icon compliance: maskable, android-adaptive, or ios ($0.01 USDC) | source: imagcon.app
 create_invoice | recipient_name, recipient_address, line_items, output_path, sender_name, sender_address, invoice_number, due_date, tax_rate, notes, template | Professional invoice PDF, server-side totals, per-wallet auto-numbering ($0.10 USDC) | source: stackbill.app
 get_wallet_profile_imagcon | (none) | Look up temp vs permanent Imagcon wallet profile (free) | source: imagcon.app
-setup_wallet_profile_imagcon | name, terms_confirmed, profile_token, company_name, tax_id | Activate permanent Imagcon account from first-payment profile token (free) | source: imagcon.app
+setup_wallet_profile_imagcon | name, terms_confirmed, profile_token, company_name, tax_id, rotate_api_key | Activate permanent Imagcon account or rotate API key (free) | source: imagcon.app
 setup_wallet_profile_stackbill | name, terms_confirmed, profile_token, company_name, tax_id, address | Activate permanent StackBill account from first-payment profile token (free) | source: stackbill.app
+dicta_transcribe_audio | audio_url, store | Transcribe short audio (up to 15 min, 100 MB) — diarized JSON ($0.10 USDC) | source: dicta-notes.com
+dicta_transcribe_long_audio | audio_url, store | Transcribe long-form audio (up to 2 hours, 400 MB) — diarized JSON ($0.59 USDC) | source: dicta-notes.com
+get_wallet_profile_dicta | (none) | Look up temp vs permanent Dicta-Notes wallet profile (free) | source: dicta-notes.com
+setup_wallet_profile_dicta | name, terms_confirmed, profile_token, rotate_api_key | Activate permanent Dicta-Notes account or rotate API key (free) | source: dicta-notes.com
+recover_wallet_profile_dicta | profile_token | Recover lost Dicta-Notes API key by wallet signature (free) | source: dicta-notes.com
+list_dicta_transcripts | limit | List stored transcripts for this wallet (free; requires Dicta API key) | source: dicta-notes.com
+get_dicta_transcript | transcript_id | Fetch a stored transcript by id (free; requires Dicta API key) | source: dicta-notes.com
 
 ### PAYMENTS
 network: Base mainnet (eip155:8453)
@@ -135,16 +182,20 @@ flow: Each tool call makes an HTTP request to the source app's x402 endpoint. Th
   wallet, and retries. Settlement is on-chain; funds go directly to the source app's
   wallet. StackApps takes no cut.
 prices:
-  - $0.01 USDC: validate_x402_endpoint
+  - $0.01 USDC: validate_x402_endpoint, check_icon
   - $0.02 USDC: resize_image
-  - $0.10 USDC: create_pwa_icons_from_image, create_splash_screens_from_image, create_invoice
+  - $0.10 USDC: create_pwa_icons_from_image, create_splash_screens_from_image, create_invoice, dicta_transcribe_audio
   - $0.195 USDC: generate_image
   - $0.295 USDC: generate_pwa_icons, generate_splash_screens
-  - free: get_wallet_profile_imagcon, setup_wallet_profile_imagcon, setup_wallet_profile_stackbill (no x402 charge)
+  - $0.59 USDC: dicta_transcribe_long_audio
+  - free: resize_generated_image, get_wallet_profile_imagcon, setup_wallet_profile_imagcon,
+    setup_wallet_profile_stackbill, get_wallet_profile_dicta, setup_wallet_profile_dicta,
+    recover_wallet_profile_dicta, list_dicta_transcripts, get_dicta_transcript (no x402 charge)
 client-safety: The server refuses to sign any payment challenge that does not pay
-  the StackApps suite wallet, or that exceeds the per-call cap ($0.50 USDC by
-  default; override with STACKAPPS_MAX_USD_PER_CALL). A compromised or spoofed
-  endpoint cannot redirect or inflate payments.
+  the StackApps suite wallet, or that exceeds the per-call cap ($0.59 USDC by
+  default; override with STACKAPPS_MAX_USD_PER_CALL). The default cap covers
+  dicta_transcribe_long_audio ($0.59). A compromised or spoofed endpoint cannot
+  redirect or inflate payments.
 
 ### REQUIRED-SECRETS
 - WALLET_PRIVATE_KEY:
@@ -159,11 +210,19 @@ client-safety: The server refuses to sign any payment challenge that does not pa
     description: Optional override for X-Imagcon-Token header on subsequent x402 calls
     format: tok_... string from Imagcon first-payment response
     note: Normally stored in session memory automatically after first paid call
+- DICTA_PROFILE_TOKEN:
+    description: Optional override for X-Dicta-Token header on subsequent x402 calls
+    format: tok_... string from Dicta-Notes first-payment response
+    note: Normally stored in session memory automatically after first paid Dicta call
+- DICTA_API_KEY:
+    description: Dicta-Notes API key for list_dicta_transcripts / get_dicta_transcript
+    format: dn_live_... string from first payment, setup, or recover
+    note: Normally stored in session memory automatically after first paid Dicta call
 
 ### CLIENT-CONFIGS
 
 #### Claude Code (CLI)
-claude mcp add stackapps-suite -- uvx --from https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.8/stackapps_suite_mcp-0.1.8-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
+claude mcp add stackapps-suite -- uvx --from https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.9/stackapps_suite_mcp-0.1.9-py3-none-any.whl stackapps-suite-mcp --wallet-key 0x...
 
 #### Claude Code / Cursor / Windsurf / Cline (JSON)
 {
@@ -172,7 +231,7 @@ claude mcp add stackapps-suite -- uvx --from https://github.com/Explorer-64/Stac
       "command": "uvx",
       "args": [
         "--from",
-        "https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.8/stackapps_suite_mcp-0.1.8-py3-none-any.whl",
+        "https://github.com/Explorer-64/StackApps/releases/download/stackapps-suite-mcp-v0.1.9/stackapps_suite_mcp-0.1.9-py3-none-any.whl",
         "stackapps-suite-mcp",
         "--wallet-key", "0x..."
       ]
@@ -564,6 +623,234 @@ source: stackbill.app/routes/x402/profile/activate
 ### MCP
 tool: setup_wallet_profile_stackbill
 
+## CAPABILITY: resize-generated-image
+description: Resize an image previously generated via generate_image (pass its image_key)
+  to exact dimensions or a social-media preset. Free — no second x402 payment, since the
+  source image was already paid for on generation. Presets and fit modes match resize_image.
+  Powered by Imagcon (imagcon.app).
+input:
+  - name: image_key
+    type: string
+    required: true
+    description: image_key returned by generate_image.
+  - name: output_path
+    type: string
+    required: false
+    default: ./resized.png
+    description: Where the resized image is written.
+  - name: preset
+    type: string
+    required: false
+    description: Social preset (og, twitter-card, youtube-thumbnail, instagram-square,
+      instagram-portrait, instagram-story, linkedin-post, twitter-header, github-social).
+  - name: width
+    type: number
+    required: false
+    description: Target width in pixels (16-4096).
+  - name: height
+    type: number
+    required: false
+    description: Target height in pixels (16-4096).
+  - name: mode
+    type: string
+    required: false
+    default: cover
+    description: Fit mode — cover, contain, blur, or stretch.
+output:
+  - type: file
+    description: Resized image written to output_path.
+auth-required: false
+payment: free (no x402 charge — source image already paid for)
+source: imagcon.app/routes/x402/resize-generated
+
+### MCP
+tool: resize_generated_image
+
+## CAPABILITY: check-icon
+description: Check whether an existing icon meets real platform compliance rules — W3C
+  maskable safe zone, Android adaptive icon safe zone, or iOS App Store icon guidance.
+  Returns a structured pass/warn/fail/undetermined report. Distinct from
+  create_pwa_icons_from_image, which generates a full icon set rather than checking one
+  you already have. Powered by Imagcon (imagcon.app).
+input:
+  - name: image_path
+    type: string
+    required: true
+    description: Absolute path to a PNG, JPEG, or WebP icon file on the local machine.
+  - name: target
+    type: string
+    required: true
+    description: Compliance target — maskable, android-adaptive, or ios.
+output:
+  - type: json
+    description: Structured compliance report with pass/warn/fail/undetermined verdict.
+auth-required: false
+payment: $0.01 USDC per call (Base mainnet, x402)
+source: imagcon.app/routes/x402/check-icon
+
+### MCP
+tool: check_icon
+
+## CAPABILITY: dicta-transcribe-audio
+description: Transcribe short audio (voicemail, call recording, memo, podcast clip — up
+  to 15 minutes, 100 MB) from a publicly reachable audio URL. Returns diarized,
+  timestamped transcript JSON; any spoken language is auto-detected and labeled per
+  segment. Set store=True to keep the transcript for 60 days. For recordings over 15
+  minutes use dicta_transcribe_long_audio. Powered by Dicta-Notes (dicta-notes.com).
+input:
+  - name: audio_url
+    type: string
+    required: true
+    description: HTTPS URL to an audio file (mp3, wav, m4a, etc.) the server can fetch.
+  - name: store
+    type: boolean
+    required: false
+    default: false
+    description: When true, keep the transcript for 60 days (retrievable via list/get tools).
+output:
+  - type: json
+    description: Transcript JSON with segments, speakers, duration, and language labels.
+auth-required: false
+payment: $0.10 USDC per call (Base mainnet, x402)
+source: dicta-notes.com/routes/x402/transcribe
+
+### MCP
+tool: dicta_transcribe_audio
+
+## CAPABILITY: dicta-transcribe-long-audio
+description: Transcribe long-form audio (meetings, interviews, hearings — up to 2 hours,
+  400 MB) from a publicly reachable audio URL. Returns diarized, timestamped transcript
+  JSON; no other x402 transcription endpoint in the suite accepts recordings this long.
+  Set store=True to keep the transcript for 60 days. Synchronous — a 2-hour file can take
+  15-30 minutes to process; the caller must hold the connection open. Powered by
+  Dicta-Notes (dicta-notes.com).
+input:
+  - name: audio_url
+    type: string
+    required: true
+    description: HTTPS URL to an audio file the server can fetch.
+  - name: store
+    type: boolean
+    required: false
+    default: false
+    description: When true, keep the transcript for 60 days (retrievable via list/get tools).
+output:
+  - type: json
+    description: Transcript JSON with segments, speakers, duration, and language labels.
+auth-required: false
+payment: $0.59 USDC per call (Base mainnet, x402)
+source: dicta-notes.com/routes/x402/transcribe-long
+
+### MCP
+tool: dicta_transcribe_long_audio
+
+## CAPABILITY: get-wallet-profile-dicta
+description: Look up the Dicta-Notes wallet profile for the configured wallet address.
+  Use before prompting the user to activate — shows temp vs permanent status.
+  Dicta-Notes-only — separate from Imagcon and StackBill profiles.
+input: []
+output:
+  - type: string
+    description: Profile status and optional timestamps (created_at, expires_at, activated_at).
+auth-required: false
+payment: free (no x402 charge)
+source: dicta-notes.com/routes/x402/profile/{wallet}
+
+### MCP
+tool: get_wallet_profile_dicta
+
+## CAPABILITY: setup-wallet-profile-dicta
+description: Activate a permanent Dicta-Notes account linked to your wallet, or recover a
+  lost API key on an already-permanent profile (rotate_api_key=True). Call this after the
+  first x402 payment to dicta-notes.com. profile_token is stored in session memory after
+  the first paid call; pass explicitly from secure storage if needed. Permanent accounts
+  keep payment history indefinitely. Without activation the temp account auto-deletes after
+  60 days (paper plan). Separate account system from Imagcon/StackBill.
+input:
+  - name: name
+    type: string
+    required: true
+    description: Display name for the profile (person or business name).
+  - name: terms_confirmed
+    type: boolean
+    required: true
+    description: Must be true only after the human has read https://dicta-notes.com/terms-of-service and agreed.
+  - name: profile_token
+    type: string
+    required: false
+    description: tok_... token from first x402 payment to dicta-notes.com. Defaults to session token if omitted.
+  - name: rotate_api_key
+    type: boolean
+    required: false
+    default: false
+    description: When true on a permanent profile, issue a fresh API key by wallet signature alone.
+output:
+  - type: string
+    description: Confirmation message with account status.
+auth-required: false
+payment: free (no x402 charge)
+source: dicta-notes.com/routes/x402/profile/activate
+
+### MCP
+tool: setup_wallet_profile_dicta
+
+## CAPABILITY: recover-wallet-profile-dicta
+description: Recover a lost Dicta-Notes API key by wallet signature alone — no old key
+  needed. Works for both temp and permanent profiles. profile_token defaults to the
+  session token from the first paid Dicta transcribe call if omitted.
+input:
+  - name: profile_token
+    type: string
+    required: false
+    description: tok_... token from first x402 payment to dicta-notes.com. Defaults to session token if omitted.
+output:
+  - type: string
+    description: Confirmation that a new API key was issued (stored in session, not shown).
+auth-required: false
+payment: free (no x402 charge)
+source: dicta-notes.com/routes/x402/profile/recover
+
+### MCP
+tool: recover_wallet_profile_dicta
+
+## CAPABILITY: list-dicta-transcripts
+description: List previously stored Dicta-Notes transcripts for this wallet (only transcripts
+  saved with store=True on a prior transcribe call). Requires a Dicta API key from a prior
+  paid call, setup_wallet_profile_dicta, or recover_wallet_profile_dicta.
+input:
+  - name: limit
+    type: number
+    required: false
+    description: Max results to return (default 50, max 100).
+output:
+  - type: json
+    description: Array of transcript summaries — id, route, created_at, expires_at, duration_seconds.
+auth-required: true
+payment: free (no x402 charge; requires Dicta API key)
+source: dicta-notes.com/routes/x402/transcripts
+
+### MCP
+tool: list_dicta_transcripts
+
+## CAPABILITY: get-dicta-transcript
+description: Fetch a previously stored Dicta-Notes transcript by id (from list_dicta_transcripts).
+  Requires a Dicta API key. Returns the full transcript JSON — transcript, segments,
+  speakers, duration_seconds, language, languages_detected.
+input:
+  - name: transcript_id
+    type: string
+    required: true
+    description: Transcript id from list_dicta_transcripts.
+output:
+  - type: json
+    description: Full transcript JSON.
+auth-required: true
+payment: free (no x402 charge; requires Dicta API key)
+source: dicta-notes.com/routes/x402/transcripts/{id}
+
+### MCP
+tool: get_dicta_transcript
+
 ## SUITE
 note: This gateway grows as member apps ship x402 endpoints. Each new capability
   will appear in ## MCP TOOLS above and as a ## CAPABILITY block below.
@@ -571,6 +858,7 @@ note: This gateway grows as member apps ship x402 endpoints. Each new capability
   already installed receive new tools automatically on next connect.
 members:
   - imagcon.app — PWA icons, splash screens, AI image generation, image resize,
-    x402 endpoint validation (live)
+    icon compliance, x402 endpoint validation (live)
   - stackbill.app — invoice PDF generation with per-wallet accounts (live)
-  - stackslip.app — packing slips (planned)
+  - dicta-notes.com — audio transcription (short and long-form) with wallet profiles (live)
+  - stackslip.app — packing slips (demoted — ~$0 measured demand in 2026-07-18 scan)

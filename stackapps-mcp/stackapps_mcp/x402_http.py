@@ -15,7 +15,7 @@ from x402.mechanisms.evm.exact import ExactEvmClientScheme
 # challenge from a suite endpoint.
 SUITE_PAY_TO = "0x1f2A484ef654d49c58c625b09e78B538501D652D"
 
-_DEFAULT_MAX_USD_PER_CALL = 0.50
+_DEFAULT_MAX_USD_PER_CALL = 0.59
 
 
 def _max_usdc_units() -> int:
@@ -36,7 +36,7 @@ class SuiteX402Http:
 
     Handles the 402 challenge/sign/retry cycle with two guards applied before
     any payment is signed: the challenge must pay SUITE_PAY_TO, and the amount
-    must not exceed the per-call cap (STACKAPPS_MAX_USD_PER_CALL, default $0.50).
+    must not exceed the per-call cap (STACKAPPS_MAX_USD_PER_CALL, default $0.59).
     """
 
     def __init__(self, private_key: str, network: str = "eip155:8453") -> None:
